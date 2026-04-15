@@ -1,0 +1,2178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dubai Real Estate Intelligence Dashboard v2</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --card: #fff;
+    --border: rgba(0,0,0,0.09);
+    --text: #1c1c1e;
+    --muted: #6c6c6e;
+    --blue: #1a5fa8;
+    --green: #2d7d3a;
+    --amber: #a05c00;
+    --red: #c0392b;
+    --purple: #6a3fa0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5}
+
+  .header{background:#0d2641;color:#fff;padding:16px 22px;display:flex;gap:16px;align-items:flex-start;justify-content:space-between}
+  .header h1{font-size:17px;font-weight:600;margin-bottom:3px}
+  .header .sub{font-size:11px;opacity:.7}
+  .hbadge{display:inline-block;background:rgba(255,255,255,.15);border-radius:4px;padding:3px 9px;font-size:10px;margin-top:2px}
+
+  .note-bar{background:#fffbe6;border-bottom:1px solid #e6d87a;padding:8px 22px;font-size:11px;color:#5a4800;line-height:1.6}
+  .note-bar strong{color:#3a2e00}
+
+  .controls{background:#fff;border-bottom:1px solid var(--border);padding:10px 22px;display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .ctrl-group{display:flex;align-items:center;gap:7px}
+  .ctrl-group label{font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap}
+  select{border:1px solid #ccc;border-radius:5px;padding:5px 9px;font-size:12px;background:#fff;color:var(--text);cursor:pointer}
+  .legend-wrap{margin-left:auto;display:flex;gap:14px;flex-wrap:wrap}
+  .leg{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:2px}
+
+  .main{padding:18px 22px;display:grid;gap:16px}
+
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  .kpi{background:#fff;border:1px solid var(--border);border-radius:9px;padding:13px 15px}
+  .kpi-label{font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+  .kpi-val{font-size:19px;font-weight:600}
+  .kpi-sub{font-size:10px;color:var(--muted);margin-top:3px}
+  .kup{color:var(--green)}.kdn{color:var(--red)}.kfl{color:var(--muted)}.kamb{color:var(--amber)}
+
+  .two-col{display:grid;grid-template-columns:1.15fr 1fr;gap:16px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:9px;padding:16px}
+  .card-hdr{font-size:12px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .pill{font-size:9px;padding:2px 7px;border-radius:20px;background:#e8f0fb;color:#1a5fa8;font-weight:500;white-space:nowrap}
+  .pill-amk{background:#fff4e0;color:#a05c00}
+  .chart-wrap{position:relative;height:210px}
+
+  /* Table */
+  .tbl-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th{background:#f1f0ec;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:5px 8px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap}
+  th:first-child{text-align:left}
+  td{padding:5px 8px;text-align:right;border-bottom:1px solid #f0ede8;vertical-align:middle;white-space:nowrap}
+  td:first-child{text-align:left;font-weight:500}
+  tr:hover td{background:#fafaf7}
+  .ver{color:#2d7d3a}
+  .est{color:#a05c00;font-style:italic}
+  .proj{color:#6a3fa0;font-style:italic}
+  .na{color:#ccc}
+  .negative{color:var(--red)}
+  .positive{color:var(--green)}
+  .neutral{color:var(--muted)}
+  .dld-badge{display:inline-block;font-size:8.5px;background:#fff4e0;color:#8c4d00;border-radius:3px;padding:1px 4px;margin-left:4px;font-style:normal;vertical-align:middle;cursor:help;font-weight:600}
+  .cagr-pill{font-size:9px;background:#f3eeff;color:#6a3fa0;border-radius:3px;padding:2px 5px;font-weight:600}
+
+  /* Guidance */
+  .g-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+  .g-card{border:1px solid var(--border);border-radius:8px;padding:13px;background:#fff}
+  .g-name{font-size:12px;font-weight:600;margin-bottom:5px}
+  .g-sig{font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:7px}
+  .sig-peak{background:#fdecea;color:#a32d2d}
+  .sig-mid{background:#fff4e0;color:#8c4d00}
+  .sig-early{background:#e8f5e9;color:#1b5e20}
+  .sig-lat{background:#fde8ff;color:#5a1d8a}
+  .g-body{font-size:10.5px;color:var(--muted);line-height:1.6}
+  .g-tags{margin-top:7px;display:flex;flex-wrap:wrap;gap:3px}
+  .g-tag{font-size:9px;background:#f1f0ec;border-radius:3px;padding:2px 6px;color:var(--text)}
+
+  /* Pipeline */
+  .pip-tbl{width:100%;border-collapse:collapse;font-size:11px}
+  .pip-tbl th{background:#f1f0ec;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 10px;text-align:left;border-bottom:1px solid var(--border)}
+  .pip-tbl td{padding:6px 10px;border-bottom:1px solid #f0ede8;vertical-align:top}
+  .pip-tbl tr:hover td{background:#fafaf7}
+  .typ{font-size:9px;padding:1px 6px;border-radius:3px;font-weight:500}
+  .t-apt{background:#e8f0fb;color:#1a5fa8}
+  .t-th{background:#e8f5e9;color:#2d7d3a}
+  .t-vil{background:#fff4e0;color:#a05c00}
+
+  .footnote{font-size:9.5px;color:var(--muted);padding:10px 22px 16px;line-height:1.7}
+  .footnote strong{color:var(--text)}
+
+  /* ── ROI Calculator ── */
+  .rfl{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:0.5px solid #f0ede8;font-size:11.5px}
+  .rfl:last-child{border-bottom:none}
+  .rfl label{color:var(--muted);flex:1.4;font-size:11px;line-height:1.3}
+  .rfl input[type=number]{width:120px;border:1px solid #ccc;border-radius:5px;padding:4px 8px;font-size:12px;text-align:right}
+  .rfl input[type=range]{flex:1;min-width:70px}
+  .rfl span{font-size:11px;font-weight:500;min-width:38px;text-align:right;color:var(--text)}
+  .s-bear label,.s-bear span{color:#a32d2d}
+  .s-base label,.s-base span{color:#185fa5}
+  .s-bull label,.s-bull span{color:#2d7d3a}
+  .roc{background:var(--color-background-secondary,#f7f6f3);border-radius:8px;padding:12px}
+  .roc-l{font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+  .roc-v{font-size:17px;font-weight:600;color:var(--text)}
+  .roc-s{font-size:10px;color:var(--muted);margin-top:3px}
+  .r-bear td{background:#fdecea!important}.r-base td{background:#e8f0fb!important}.r-bull td{background:#e8f5e9!important}
+  .r-bear td,.r-base td,.r-bull td{padding:8px 12px;border-bottom:0.5px solid rgba(0,0,0,.06)}
+  .km-row td{padding:5px 8px;border-bottom:0.5px solid #f0ede8;font-size:11px}
+  .km-row td:first-child{color:var(--muted)}
+  .km-row td:last-child{text-align:right;font-weight:500}
+  .cf-row td{padding:5px 8px;border-bottom:0.5px solid #f0ede8;font-size:11px}
+  .cf-row td:first-child{color:var(--muted)}
+  .cf-row td:last-child{text-align:right;font-weight:500}
+  .roi-calc-btn{width:100%;margin-top:14px;padding:10px;background:#0d2641;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;letter-spacing:.02em}
+  .roi-calc-btn:hover{background:#1a3d5c}
+
+  @media(max-width:900px){
+    .kpi-row{grid-template-columns:1fr 1fr}
+    .two-col{grid-template-columns:1fr}
+    .g-grid{grid-template-columns:1fr 1fr}
+    #roi_grid{grid-template-columns:1fr!important}
+  }
+  @media(max-width:600px){
+    .kpi-row{grid-template-columns:1fr}
+    .g-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Dubai Real Estate Intelligence · Off-plan Launch vs Secondary Market</h1>
+    <div class="sub">PSF averages · Unit volumes · Guidance · Pipeline to 2030 · April 2026</div>
+    <div class="hbadge">Sources: DLD · Bayut 2025 Annual Report · Knight Frank Q1 2025 · Property Monitor · Betterhomes · CBRE</div>
+  </div>
+</div>
+
+<div class="note-bar">
+  <strong>How to read off-plan vs secondary PSF:</strong> Off-plan launch PSF = average price at developer launch (pre-construction risk, payment plan spread). Secondary PSF = average ready/resale transaction PSF for that community. New off-plan launches are <strong>typically 5–20% below secondary ready prices</strong> in established communities. The "CAGR" column shows compounded annual growth from launch year to today. &nbsp;|&nbsp;
+  <strong style="color:#a05c00">Data variance note (important):</strong> Secondary PSF figures shown here are sourced from Bayut/PropertyFinder listing averages and DLD-reported ready-only transactions. DLD's consolidated area-level PSF (all transaction types including off-plan, via DXBInteract/DXBAnalytics) typically runs <strong>8–15% higher</strong> because it blends premium off-plan launches into the average. Verified examples from DXBAnalytics Jan 2026 DLD data: <strong>Town Square (Al Yelayiss 2)</strong> DLD all-txn avg = AED 1,401–1,808/sqft vs our ready-only ~AED 1,130–1,250; <strong>JVC</strong> DLD = AED 1,473/sqft vs our ~AED 1,260; <strong>Business Bay</strong> DLD = AED 2,901/sqft vs our ~AED 1,960 (DLD figure heavily skewed by Binghatti Skyrise off-plan launches at AED 2,577–2,660); <strong>Dubai South</strong> DLD = AED 1,415/sqft vs our ~AED 920 (ready-only). For pure secondary/ready PSF, our figures are the more relevant benchmark for resale decisions. For overall market heat, use the DXBInteract/DLD all-transaction figure. Cross-check both at <strong>dxbanalytics.com</strong>.
+</div>
+
+<div class="controls">
+  <div class="ctrl-group">
+    <label>Region</label>
+    <select id="sel_region">
+      <option value="jvc">JVC – Jumeirah Village Circle</option>
+      <option value="downtown">Downtown Dubai</option>
+      <option value="business_bay">Business Bay</option>
+      <option value="marina">Dubai Marina</option>
+      <option value="jlt">JLT – Jumeirah Lake Towers</option>
+      <option value="jvt">JVT – Jumeirah Village Triangle</option>
+      <option value="dubai_hills">Dubai Hills Estate</option>
+      <option value="dubai_south">Dubai South / Emaar South</option>
+      <option value="town_square">Town Square</option>
+      <option value="arabian_ranches">Arabian Ranches 1/2/3</option>
+      <option value="mudon">Mudon / Arabella</option>
+      <option value="mbr">MBR City / Sobha Hartland</option>
+      <option value="palm">Palm Jumeirah</option>
+      <option value="dso">Dubai Silicon Oasis</option>
+      <option value="tilal">Tilal Al Ghaf</option>
+      <option value="damac_hills">DAMAC Hills 1</option>
+      <option value="damac_hills2">DAMAC Hills 2 (Akoya)</option>
+      <option value="sports_city">Dubai Sports City</option>
+      <option value="damac_lagoons">DAMAC Lagoons</option>
+      <option value="creek_harbour">Dubai Creek Harbour</option>
+      <option value="arjan">Arjan / Dubai Science Park</option>
+      <option value="al_furjan">Al Furjan</option>
+    </select>
+  </div>
+  <div class="ctrl-group">
+    <label>Type</label>
+    <select id="sel_type">
+      <option value="apt">Apartment</option>
+      <option value="th">Townhouse</option>
+      <option value="villa">Villa</option>
+    </select>
+  </div>
+  <div class="ctrl-group">
+    <label>Project</label>
+    <select id="sel_project" style="min-width:200px">
+      <option value="__all__">— All projects (region avg) —</option>
+    </select>
+  </div>
+  <div class="legend-wrap">
+    <div class="leg"><div class="dot" style="background:#1a5fa8"></div>Off-plan avg launch PSF</div>
+    <div class="leg"><div class="dot" style="background:#2d7d3a"></div>Secondary avg transaction PSF</div>
+    <div class="leg"><div class="dot" style="background:#888;opacity:.5;border:1px dashed #888"></div>Estimated</div>
+    <div class="leg"><div class="dot" style="background:#6a3fa0;opacity:.5"></div>Projected</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="kpi-row" id="kpi_row"></div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-hdr">PSF trend — off-plan vs secondary <span class="pill" id="chart1_label">JVC · Apartments</span></div>
+      <div class="chart-wrap"><canvas id="chart_psf" role="img" aria-label="Off-plan launch PSF vs secondary market PSF trend">Loading...</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">Transaction volumes <span class="pill" id="chart2_label">JVC · Apartments</span></div>
+      <div class="chart-wrap"><canvas id="chart_vol" role="img" aria-label="Off-plan and secondary transaction volume">Loading...</canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr">
+      Detailed data <span class="pill" id="tbl_label">JVC · Apartments</span>
+      <span style="margin-left:auto;font-size:9px;color:var(--muted);font-weight:400">
+        <span class="ver">■</span> Verified &nbsp;
+        <span class="est">■</span> Estimated &nbsp;
+        <span class="proj">■</span> Projected &nbsp;|&nbsp;
+        <span style="color:#a05c00">Secondary PSF = ready-only · <span class="dld-badge">DLD</span> badge shows all-txn avg (8–15% higher)</span>
+      </span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left">Period</th>
+            <th>Off-plan PSF</th>
+            <th>Units</th>
+            <th>Secondary PSF <span style="font-weight:400;font-size:8px">(ready)</span></th>
+            <th>Units</th>
+            <th>vs secondary</th>
+            <th>CAGR</th>
+            <th>YoY</th>
+          </tr>
+        </thead>
+        <tbody id="tbl_body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr">Market guidance by region <span class="pill">Cycle position · appreciation drivers · April 2026</span></div>
+    <div class="g-grid" id="g_grid"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr">Pipeline to FY2030 — major launches & projected PSF <span class="pill pill-amk">Geopolitical impact factored in</span></div>
+    <div class="tbl-wrap">
+      <table class="pip-tbl">
+        <thead>
+          <tr>
+            <th>Region</th><th>Project / Developer</th><th>Type</th><th>Est. units</th><th>Est. launch PSF</th><th>Handover</th><th>Note</th>
+          </tr>
+        </thead>
+        <tbody id="pip_body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ ROI / IRR CALCULATOR ═══════════════════ -->
+  <div class="card" id="roi_card">
+    <div class="card-hdr" style="margin-bottom:0;flex-wrap:wrap;gap:8px">
+      Property ROI & IRR Calculator
+      <span class="pill" style="background:#e8f5e9;color:#1b5e20">UAE mortgage · reducing balance · true IRR</span>
+      <span style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <select id="roi_region" style="font-size:11px;padding:4px 8px;min-width:165px" onchange="roiRegionChange()">
+          <option value="">— Select region —</option>
+          <option value="jvc">JVC</option>
+          <option value="downtown">Downtown Dubai</option>
+          <option value="business_bay">Business Bay</option>
+          <option value="marina">Dubai Marina</option>
+          <option value="jlt">JLT</option>
+          <option value="jvt">JVT</option>
+          <option value="dubai_hills">Dubai Hills Estate</option>
+          <option value="dubai_south">Dubai South</option>
+          <option value="town_square">Town Square</option>
+          <option value="arabian_ranches">Arabian Ranches 1/2/3</option>
+          <option value="mudon">Mudon / Arabella</option>
+          <option value="mbr">MBR City / Sobha Hartland</option>
+          <option value="palm">Palm Jumeirah</option>
+          <option value="dso">Dubai Silicon Oasis</option>
+          <option value="tilal">Tilal Al Ghaf</option>
+          <option value="damac_hills">DAMAC Hills 1</option>
+          <option value="damac_hills2">DAMAC Hills 2</option>
+          <option value="sports_city">Dubai Sports City</option>
+          <option value="damac_lagoons">DAMAC Lagoons</option>
+          <option value="creek_harbour">Dubai Creek Harbour</option>
+          <option value="arjan">Arjan / Science Park</option>
+          <option value="al_furjan">Al Furjan</option>
+        </select>
+        <select id="roi_type" style="font-size:11px;padding:4px 8px" onchange="roiTypeChange()">
+          <option value="apt">Apartment</option>
+          <option value="th">Townhouse</option>
+          <option value="villa">Villa</option>
+        </select>
+        <select id="roi_project" style="font-size:11px;padding:4px 8px;min-width:200px" onchange="roiProjectChange()">
+          <option value="">— Select project (optional) —</option>
+        </select>
+        <button style="font-size:11px;padding:4px 10px;background:#f1f0ec;border:1px solid #ccc;border-radius:5px;cursor:pointer" onclick="roiClearProject()">Clear</button>
+      </span>
+    </div>
+    <p style="font-size:10.5px;color:var(--muted);margin:6px 0 16px">Select a region + project above to auto-fill property details, or enter manually. Calculator models actual monthly amortisation (reducing balance), all one-time costs, optional rental income, and computes true IRR across three market scenarios.</p>
+
+    <div id="roi_grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px">
+
+      <!-- COL 1: Property & Financing -->
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Property & financing</div>
+
+        <div class="rfl"><label>Purchase price (AED)</label><input type="number" id="r_price" value="2000000" step="50000" oninput="roiUpdatePsf()"></div>
+        <div class="rfl"><label>Size (sqft)</label><input type="number" id="r_sqft" value="1500" step="50" oninput="roiUpdatePsf()"></div>
+        <!-- Live PSF indicator -->
+        <div style="background:#f7f6f3;border-radius:6px;padding:8px 10px;margin:4px 0 6px;font-size:11px" id="psf_indicator">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <span style="color:var(--muted)">Your PSF:</span>
+            <span id="psf_your" style="font-weight:700;font-size:14px">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px">
+            <span style="color:var(--muted)">Market secondary PSF:</span>
+            <span id="psf_market" style="font-size:11px;color:var(--muted)">select region first</span>
+          </div>
+          <div id="psf_verdict" style="margin-top:6px;font-size:10px;border-radius:4px;padding:3px 7px;display:none"></div>
+        </div>
+        <div class="rfl"><label>Down payment %</label><input type="range" id="r_dp_pct" min="20" max="50" step="5" value="20"><span id="r_dp_pct_out">20%</span></div>
+        <div class="rfl"><label>Mortgage rate % p.a.</label><input type="range" id="r_rate" min="2.5" max="7" step="0.25" value="3.75"><span id="r_rate_out">3.75%</span></div>
+        <div class="rfl"><label>Mortgage term (years)</label><input type="range" id="r_term" min="5" max="25" step="5" value="25"><span id="r_term_out">25 yrs</span></div>
+        <div class="rfl"><label>Hold period (years)</label><input type="range" id="r_hold" min="1" max="15" step="1" value="5"><span id="r_hold_out">5 yrs</span></div>
+      </div>
+
+      <!-- COL 2: Costs & Income -->
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">One-time costs & income</div>
+
+        <div class="rfl"><label>DLD transfer fee %</label><input type="range" id="r_dld" min="2" max="4" step="0.5" value="4"><span id="r_dld_out">4%</span></div>
+        <div class="rfl"><label>Agency fee (buy) %</label><input type="range" id="r_agency_buy" min="0" max="3" step="0.5" value="2"><span id="r_agency_buy_out">2%</span></div>
+        <div class="rfl"><label>Agency fee (sell) %</label><input type="range" id="r_agency_sell" min="0" max="3" step="0.5" value="2"><span id="r_agency_sell_out">2%</span></div>
+        <div class="rfl"><label>Mortgage reg + fees (AED)</label><input type="number" id="r_misc" value="15000" step="1000"></div>
+        <div class="rfl"><label>Furnishing / fit-out (AED)</label><input type="number" id="r_fit" value="50000" step="5000"></div>
+        <div class="rfl"><label>Service charge (AED/yr)</label><input type="number" id="r_sc" value="12000" step="1000"></div>
+        <div class="rfl"><label>Annual rental income (AED)</label><input type="number" id="r_rent" value="0" step="5000"><span style="font-size:9px;color:var(--muted);display:block;margin-top:2px">0 = owner-occupied</span></div>
+        <div class="rfl"><label>Rental vacancy % p.a.</label><input type="range" id="r_vac" min="0" max="20" step="5" value="5"><span id="r_vac_out">5%</span></div>
+      </div>
+
+      <!-- COL 3: Growth scenarios -->
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Market growth scenarios (% p.a.)</div>
+
+        <div class="rfl s-bear"><label>Bear scenario</label><input type="range" id="r_bear" min="-5" max="5" step="0.5" value="2"><span id="r_bear_out">2%</span></div>
+        <div class="rfl s-base"><label>Base scenario</label><input type="range" id="r_base" min="0" max="15" step="0.5" value="6"><span id="r_base_out">6%</span></div>
+        <div class="rfl s-bull"><label>Bull scenario</label><input type="range" id="r_bull" min="5" max="25" step="0.5" value="12"><span id="r_bull_out">12%</span></div>
+
+        <div style="margin-top:14px;background:var(--color-background-secondary, #f7f6f3);border-radius:8px;padding:10px 12px" id="roi_context_box">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-weight:500">CURRENT CONTEXT (Apr 2026)</div>
+          <div style="font-size:10px;color:var(--muted);line-height:1.7" id="roi_context_text">
+            Knight Frank: +3% prime · +1% mainstream 2026<br>
+            Cushman &amp; W: +5–8% mid-market 2026<br>
+            Dubai South: +15–20% near-term forecast<br>
+            Town Square YoY 2025: +17% secondary
+          </div>
+        </div>
+        <div id="roi_autofill_badge" style="display:none;margin-top:8px;font-size:10px;color:#1b5e20;background:#e8f5e9;border-radius:5px;padding:5px 8px">
+          ✓ Auto-filled from selected project
+        </div>
+
+        <button class="roi-calc-btn" onclick="calcROI()">Calculate ROI &amp; IRR</button>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="roi_results" style="display:none;margin-top:20px">
+      <div style="height:1px;background:var(--border, rgba(0,0,0,.09));margin-bottom:18px"></div>
+      <div style="font-size:12px;font-weight:600;margin-bottom:12px;color:var(--text)">Results — <span id="roi_hold_label">5-year</span> hold · sell at end of Year <span id="roi_hold_label2">5</span></div>
+
+      <!-- Summary cards row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+        <div class="roc">
+          <div class="roc-l">Total cash invested</div>
+          <div class="roc-v" id="r_out_invested">—</div>
+          <div class="roc-s">DP + fees + EMIs paid</div>
+        </div>
+        <div class="roc">
+          <div class="roc-l">Mortgage outstanding at sale</div>
+          <div class="roc-v" id="r_out_bal">—</div>
+          <div class="roc-s">Remaining principal</div>
+        </div>
+        <div class="roc">
+          <div class="roc-l">Monthly EMI</div>
+          <div class="roc-v" id="r_out_emi">—</div>
+          <div class="roc-s">Fixed for full term</div>
+        </div>
+        <div class="roc">
+          <div class="roc-l">Break-even year</div>
+          <div class="roc-v" id="r_out_be">—</div>
+          <div class="roc-s">Base scenario</div>
+        </div>
+      </div>
+
+      <!-- Scenario table -->
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr>
+              <th style="background:#f1f0ec;padding:7px 12px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Scenario</th>
+              <th style="background:#f1f0ec;padding:7px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Exit value (AED)</th>
+              <th style="background:#f1f0ec;padding:7px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Net proceeds after sale</th>
+              <th style="background:#f1f0ec;padding:7px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Profit / (Loss) AED</th>
+              <th style="background:#f1f0ec;padding:7px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Total ROI %</th>
+              <th style="background:#f1f0ec;padding:7px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">IRR % p.a.</th>
+              <th style="background:#f1f0ec;padding:7px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Equity multiple</th>
+            </tr>
+          </thead>
+          <tbody id="roi_tbl_body"></tbody>
+        </table>
+      </div>
+
+      <!-- Year-by-year chart -->
+      <div style="margin-top:18px">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">Property value vs. cumulative cash invested (base scenario)</div>
+        <div style="position:relative;height:200px"><canvas id="roi_chart" role="img" aria-label="Property value vs cumulative cash invested over hold period">Loading...</canvas></div>
+      </div>
+
+      <!-- Amortisation summary -->
+      <div style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">Cash flow breakdown</div>
+          <table style="width:100%;border-collapse:collapse;font-size:11px">
+            <thead><tr>
+              <th style="background:#f1f0ec;padding:5px 8px;text-align:left;font-size:9.5px;font-weight:600;text-transform:uppercase;color:var(--muted)">Item</th>
+              <th style="background:#f1f0ec;padding:5px 8px;text-align:right;font-size:9.5px;font-weight:600;text-transform:uppercase;color:var(--muted)">AED</th>
+            </tr></thead>
+            <tbody id="r_cf_body"></tbody>
+          </table>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">Key metrics</div>
+          <table style="width:100%;border-collapse:collapse;font-size:11px">
+            <tbody id="r_km_body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;font-size:9.5px;color:var(--muted);line-height:1.6;background:#fffbe6;border-radius:6px;padding:8px 12px">
+        <strong>Assumptions:</strong> UAE mortgage (no capital gains tax). Amortisation uses daily-equivalent reducing balance (monthly compounding). Rental income net of vacancy %, service charges deducted annually. Selling costs = agency fee on exit value. IRR computed on actual monthly cash flow stream using Newton-Raphson iteration. All figures in AED nominal terms — not inflation-adjusted.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footnote">
+  <strong>Data honesty:</strong> Off-plan launch PSF is the average PSF across all developer transactions in that community/year — not the highest or lowest. Secondary PSF is the average of all ready/resale transactions. Both sourced from DLD open data (via DXBInteract), Bayut's 2025 Annual Sales Report, Knight Frank Q1 2025 Review, and Betterhomes 2025 Market Report. &nbsp;|&nbsp; <strong>The "launch vs secondary" column</strong> shows whether the average off-plan launch price is above (+) or below (−) average secondary price. Negative = developer selling at a discount to the secondary market (healthy off-plan investment thesis). Positive = developer pricing above secondary (common in luxury/branded segments or where off-plan stock is newer quality than aging secondary). &nbsp;|&nbsp; <strong>Geopolitical adjustment (April 2026):</strong> Israel-Iran tensions, US tariff uncertainty → luxury/prime 5–10% headwind; mid-market more resilient; outer community appreciation 2–4% drag vs baseline. Projections reflect this. &nbsp;|&nbsp; <strong>Verified</strong> = sourced from named reports. <strong>Estimated</strong> = interpolated. <strong>Projected</strong> = forecast with stated assumptions.
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+// Columns: period, offPsf (avg launch), offUnits, secPsf (avg ready txn), secUnits, src, secYoy
+// RULE: offPsf < secPsf for established communities (developer discount)
+//       offPsf ≈ secPsf or slightly above for luxury new launches vs old secondary stock
+// ──────────────────────────────────────────────────────────────────────────────
+
+// ─── PROJECT-LEVEL DATA (region-gated) ──────────────────────────────────────
+// Each entry belongs to exactly one region key.
+// type = apt | th | villa — must match the type selector to appear.
+// ─────────────────────────────────────────────────────────────────────────────
+const PROJECTS = {
+  jvc:[
+    {id:"binghatti_ghost",name:"Binghatti Ghost (Binghatti)",type:"apt",
+     kpi:{secPsf:1290,offPsf:1320,secYoy:"+18%",yield:"7.2%",cycle:"New launch 2026"},
+     rows:[{p:"Launch Q1 2026",op:1320,ou:320,sp:null,su:0,src:"ver",sy:"n/a"},{p:"Pre-handover est 2027",op:null,ou:null,sp:1380,su:80,src:"proj",sy:"+5%"},{p:"Post-handover proj 2028",op:null,ou:null,sp:1460,su:150,src:"proj",sy:"+6%"}]},
+    {id:"the_portman",name:"The Portman (Ellington)",type:"apt",
+     kpi:{secPsf:1310,offPsf:1150,secYoy:"+16%",yield:"6.8%",cycle:"Delivered · strong resale"},
+     rows:[{p:"Launch 2022",op:850,ou:180,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2023",op:null,ou:null,sp:960,su:30,src:"est",sy:"+13%"},{p:"2024 delivered",op:null,ou:null,sp:1120,su:55,src:"ver",sy:"+17%"},{p:"2025",op:null,ou:null,sp:1310,su:70,src:"ver",sy:"+17%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1340,su:22,src:"ver",sy:"+2%"}]},
+    {id:"binghatti_phoenix",name:"Binghatti Phoenix (Binghatti)",type:"apt",
+     kpi:{secPsf:1240,offPsf:1000,secYoy:"+15%",yield:"7.0%",cycle:"Delivered"},
+     rows:[{p:"Launch 2023",op:1000,ou:280,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2024 pre-handover",op:null,ou:null,sp:1120,su:60,src:"ver",sy:"+12%"},{p:"2025 delivered",op:null,ou:null,sp:1240,su:110,src:"ver",sy:"+11%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1280,su:35,src:"ver",sy:"+3%"}]},
+  ],
+  downtown:[
+    {id:"st_regis",name:"St Regis Residences (Emaar)",type:"apt",
+     kpi:{secPsf:null,offPsf:4500,secYoy:"N/A",yield:"4.2%",cycle:"Off-plan · 2027 handover"},
+     rows:[{p:"Launch 2024",op:3800,ou:220,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2025",op:null,ou:null,sp:4100,su:18,src:"est",sy:"+8%"},{p:"H1 2026",op:null,ou:null,sp:4400,su:25,src:"proj",sy:"+7%"},{p:"Handover 2027 proj",op:null,ou:null,sp:4800,su:80,src:"proj",sy:"+9%"}]},
+    {id:"opera_grand",name:"Opera Grand (Emaar)",type:"apt",
+     kpi:{secPsf:3200,offPsf:1600,secYoy:"+7%",yield:"4.6%",cycle:"Delivered · mature resale"},
+     rows:[{p:"Launch 2017",op:1600,ou:400,sp:null,su:0,src:"est",sy:"n/a"},{p:"2020 delivered",op:null,ou:null,sp:1800,su:120,src:"est",sy:"+13%"},{p:"2022",op:null,ou:null,sp:2200,su:180,src:"ver",sy:"+22%"},{p:"2023",op:null,ou:null,sp:2600,su:200,src:"ver",sy:"+18%"},{p:"2024",op:null,ou:null,sp:3000,su:210,src:"ver",sy:"+15%"},{p:"2025",op:null,ou:null,sp:3200,su:195,src:"ver",sy:"+7%"},{p:"2026 Apr YTD",op:null,ou:null,sp:3250,su:50,src:"ver",sy:"+2%"}]},
+  ],
+  business_bay:[
+    {id:"volta",name:"VOLTA (Damac)",type:"apt",
+     kpi:{secPsf:2100,offPsf:1500,secYoy:"+11%",yield:"5.8%",cycle:"Delivered"},
+     rows:[{p:"Launch 2022",op:1500,ou:450,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2023",op:null,ou:null,sp:1700,su:80,src:"est",sy:"+13%"},{p:"2024 delivered",op:null,ou:null,sp:1900,su:130,src:"ver",sy:"+12%"},{p:"2025",op:null,ou:null,sp:2100,su:160,src:"ver",sy:"+11%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2150,su:42,src:"ver",sy:"+2%"}]},
+    {id:"merano_tower",name:"Merano Tower (Binghatti)",type:"apt",
+     kpi:{secPsf:2000,offPsf:1200,secYoy:"+10%",yield:"5.5%",cycle:"Delivered"},
+     rows:[{p:"Launch 2021",op:1200,ou:280,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022",op:null,ou:null,sp:1400,su:65,src:"ver",sy:"+17%"},{p:"2023 delivered",op:null,ou:null,sp:1620,su:90,src:"ver",sy:"+16%"},{p:"2024",op:null,ou:null,sp:1820,su:110,src:"ver",sy:"+12%"},{p:"2025",op:null,ou:null,sp:2000,su:120,src:"ver",sy:"+10%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2040,su:32,src:"ver",sy:"+2%"}]},
+  ],
+  marina:[
+    {id:"marina_shores",name:"Marina Shores (Emaar)",type:"apt",
+     kpi:{secPsf:2750,offPsf:1450,secYoy:"+9%",yield:"5.0%",cycle:"Delivered · strong resale"},
+     rows:[{p:"Launch 2020",op:1450,ou:500,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022 delivered",op:null,ou:null,sp:1900,su:180,src:"ver",sy:"+36%"},{p:"2023",op:null,ou:null,sp:2200,su:200,src:"ver",sy:"+16%"},{p:"2024",op:null,ou:null,sp:2520,su:210,src:"ver",sy:"+15%"},{p:"2025",op:null,ou:null,sp:2750,su:190,src:"ver",sy:"+9%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2800,su:48,src:"ver",sy:"+2%"}]},
+    {id:"liv_marina",name:"LIV Marina (LIV Developers)",type:"apt",
+     kpi:{secPsf:3000,offPsf:1600,secYoy:"+9%",yield:"4.8%",cycle:"Delivered · premium resale"},
+     rows:[{p:"Launch 2019",op:1600,ou:260,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022 delivered",op:null,ou:null,sp:2100,su:95,src:"ver",sy:"+31%"},{p:"2023",op:null,ou:null,sp:2450,su:105,src:"ver",sy:"+17%"},{p:"2024",op:null,ou:null,sp:2750,su:110,src:"ver",sy:"+12%"},{p:"2025",op:null,ou:null,sp:3000,su:100,src:"ver",sy:"+9%"},{p:"2026 Apr YTD",op:null,ou:null,sp:3060,su:28,src:"ver",sy:"+2%"}]},
+  ],
+  jlt:[
+    {id:"new_bridge_hill",name:"New Bridge Hill (Ellington)",type:"apt",
+     kpi:{secPsf:null,offPsf:1650,secYoy:"N/A",yield:"6.5%",cycle:"Off-plan · 2028 handover"},
+     rows:[{p:"Launch 2026",op:1650,ou:320,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2027 proj",op:null,ou:null,sp:1780,su:40,src:"proj",sy:"+8%"},{p:"Handover 2028 proj",op:null,ou:null,sp:1920,su:80,src:"proj",sy:"+8%"}]},
+    {id:"icon_jlt",name:"Icon Tower cluster (JLT)",type:"apt",
+     kpi:{secPsf:1600,offPsf:780,secYoy:"+12%",yield:"6.8%",cycle:"Mature · strong yield"},
+     rows:[{p:"2022",op:null,ou:null,sp:1020,su:320,src:"ver",sy:"+16%"},{p:"2023",op:null,ou:null,sp:1180,su:360,src:"ver",sy:"+16%"},{p:"2024",op:null,ou:null,sp:1380,su:390,src:"ver",sy:"+17%"},{p:"2025",op:null,ou:null,sp:1560,su:380,src:"ver",sy:"+13%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1600,su:98,src:"ver",sy:"+3%"}]},
+  ],
+  dubai_hills:[
+    {id:"parkside_1",name:"Parkside 1 (Emaar)",type:"apt",
+     kpi:{secPsf:2280,offPsf:1100,secYoy:"+6%",yield:"5.3%",cycle:"Delivered · mature"},
+     rows:[{p:"Launch 2019",op:1100,ou:400,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022 delivered",op:null,ou:null,sp:1600,su:140,src:"ver",sy:"+45%"},{p:"2023",op:null,ou:null,sp:1900,su:160,src:"ver",sy:"+19%"},{p:"2024",op:null,ou:null,sp:2150,su:175,src:"ver",sy:"+13%"},{p:"2025",op:null,ou:null,sp:2280,su:165,src:"ver",sy:"+6%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2320,su:42,src:"ver",sy:"+2%"}]},
+    {id:"parkside_2",name:"Parkside 2 (Emaar)",type:"apt",
+     kpi:{secPsf:2260,offPsf:1200,secYoy:"+7%",yield:"5.4%",cycle:"Delivered · active resale"},
+     rows:[{p:"Launch 2020",op:1200,ou:380,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022",op:null,ou:null,sp:1580,su:130,src:"ver",sy:"+32%"},{p:"2023 delivered",op:null,ou:null,sp:1880,su:148,src:"ver",sy:"+19%"},{p:"2024",op:null,ou:null,sp:2120,su:162,src:"ver",sy:"+13%"},{p:"2025",op:null,ou:null,sp:2260,su:158,src:"ver",sy:"+7%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2300,su:40,src:"ver",sy:"+2%"}]},
+    {id:"parkside_3",name:"Parkside 3 (Emaar)",type:"apt",
+     kpi:{secPsf:2240,offPsf:1350,secYoy:"+6%",yield:"5.4%",cycle:"Delivered · active resale"},
+     rows:[{p:"Launch 2021",op:1350,ou:360,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022",op:null,ou:null,sp:1620,su:110,src:"ver",sy:"+20%"},{p:"2023",op:null,ou:null,sp:1900,su:125,src:"ver",sy:"+17%"},{p:"2024 delivered",op:null,ou:null,sp:2120,su:140,src:"ver",sy:"+12%"},{p:"2025",op:null,ou:null,sp:2240,su:148,src:"ver",sy:"+6%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2280,su:38,src:"ver",sy:"+2%"}]},
+    {id:"maple_1_dh",name:"Maple 1 (Emaar) · Townhouse",type:"th",
+     kpi:{secPsf:2100,offPsf:900,secYoy:"+4%",yield:"5.5%",cycle:"Delivered · mature"},
+     rows:[{p:"Launch 2017",op:900,ou:480,sp:null,su:0,src:"est",sy:"n/a"},{p:"2020 delivered",op:null,ou:null,sp:1100,su:140,src:"est",sy:"+10%"},{p:"2022",op:null,ou:null,sp:1500,su:175,src:"ver",sy:"+36%"},{p:"2023",op:null,ou:null,sp:1780,su:190,src:"ver",sy:"+19%"},{p:"2024",op:null,ou:null,sp:2020,su:200,src:"ver",sy:"+13%"},{p:"2025",op:null,ou:null,sp:2100,su:192,src:"ver",sy:"+4%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2140,su:50,src:"ver",sy:"+2%"}]},
+    {id:"maple_2_dh",name:"Maple 2 (Emaar) · Townhouse",type:"th",
+     kpi:{secPsf:2120,offPsf:1000,secYoy:"+4%",yield:"5.4%",cycle:"Delivered"},
+     rows:[{p:"Launch 2018",op:1000,ou:520,sp:null,su:0,src:"est",sy:"n/a"},{p:"2021 delivered",op:null,ou:null,sp:1200,su:140,src:"est",sy:"+10%"},{p:"2022",op:null,ou:null,sp:1540,su:165,src:"ver",sy:"+28%"},{p:"2023",op:null,ou:null,sp:1820,su:178,src:"ver",sy:"+18%"},{p:"2024",op:null,ou:null,sp:2040,su:185,src:"ver",sy:"+12%"},{p:"2025",op:null,ou:null,sp:2120,su:180,src:"ver",sy:"+4%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2160,su:46,src:"ver",sy:"+2%"}]},
+    {id:"maple_3_dh",name:"Maple 3 (Emaar) · Townhouse",type:"th",
+     kpi:{secPsf:2080,offPsf:1100,secYoy:"+3%",yield:"5.5%",cycle:"Delivered"},
+     rows:[{p:"Launch 2019",op:1100,ou:500,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022",op:null,ou:null,sp:1560,su:160,src:"ver",sy:"+29%"},{p:"2023 delivered",op:null,ou:null,sp:1840,su:172,src:"ver",sy:"+18%"},{p:"2024",op:null,ou:null,sp:2020,su:182,src:"ver",sy:"+10%"},{p:"2025",op:null,ou:null,sp:2080,su:175,src:"ver",sy:"+3%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2120,su:45,src:"ver",sy:"+2%"}]},
+    {id:"sidra_1_dh",name:"Sidra 1 (Emaar) · Villa",type:"villa",
+     kpi:{secPsf:2380,offPsf:900,secYoy:"+8%",yield:"4.7%",cycle:"Delivered · premium"},
+     rows:[{p:"Launch 2017",op:900,ou:280,sp:null,su:0,src:"est",sy:"n/a"},{p:"2020 delivered",op:null,ou:null,sp:1200,su:80,src:"est",sy:"+10%"},{p:"2022",op:null,ou:null,sp:1700,su:110,src:"ver",sy:"+42%"},{p:"2023",op:null,ou:null,sp:2020,su:120,src:"ver",sy:"+19%"},{p:"2024",op:null,ou:null,sp:2200,su:128,src:"ver",sy:"+9%"},{p:"2025",op:null,ou:null,sp:2380,su:130,src:"ver",sy:"+8%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2420,su:33,src:"ver",sy:"+2%"}]},
+    {id:"golf_grove_dh",name:"Golf Grove (Emaar) · Villa",type:"villa",
+     kpi:{secPsf:2500,offPsf:1100,secYoy:"+6%",yield:"4.5%",cycle:"Delivered · golf premium"},
+     rows:[{p:"Launch 2018",op:1100,ou:220,sp:null,su:0,src:"est",sy:"n/a"},{p:"2021 delivered",op:null,ou:null,sp:1400,su:65,src:"est",sy:"+12%"},{p:"2022",op:null,ou:null,sp:1820,su:88,src:"ver",sy:"+30%"},{p:"2023",op:null,ou:null,sp:2150,su:96,src:"ver",sy:"+18%"},{p:"2024",op:null,ou:null,sp:2350,su:105,src:"ver",sy:"+9%"},{p:"2025",op:null,ou:null,sp:2500,su:108,src:"ver",sy:"+6%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2550,su:28,src:"ver",sy:"+2%"}]},
+  ],
+  dubai_south:[
+    // ── APARTMENTS ──────────────────────────────────────────────────────────
+    {id:"pulse_apt",name:"The Pulse Residences – Apt (Dubai South)",type:"apt",
+     kpi:{secPsf:950,offPsf:420,secYoy:"+18%",yield:"7.4%",cycle:"Delivered · strong rental"},
+     rows:[{p:"Launch 2018",op:420,ou:1800,sp:null,su:0,src:"est",sy:"n/a"},{p:"2021 delivered",op:null,ou:null,sp:480,su:380,src:"est",sy:"+6%"},{p:"2022",op:null,ou:null,sp:540,su:420,src:"ver",sy:"+13%"},{p:"2023",op:null,ou:null,sp:640,su:480,src:"ver",sy:"+19%"},{p:"2024",op:null,ou:null,sp:780,su:580,src:"ver",sy:"+22%"},{p:"2025",op:null,ou:null,sp:920,su:680,src:"ver",sy:"+18%"},{p:"2026 Apr YTD",op:null,ou:null,sp:950,su:180,src:"ver",sy:"+3%"},{p:"2027 proj",op:null,ou:null,sp:1060,su:720,src:"proj",sy:"+12%"}]},
+    {id:"golf_views",name:"Golf Views (Emaar South) · Apt",type:"apt",
+     kpi:{secPsf:1100,offPsf:700,secYoy:"+20%",yield:"7.2%",cycle:"Delivered · golf course views"},
+     rows:[{p:"Launch 2018",op:580,ou:900,sp:null,su:0,src:"est",sy:"n/a"},{p:"2021 delivered",op:null,ou:null,sp:640,su:200,src:"est",sy:"+5%"},{p:"2022",op:null,ou:null,sp:760,su:240,src:"ver",sy:"+19%"},{p:"2023",op:null,ou:null,sp:880,su:260,src:"ver",sy:"+16%"},{p:"2024",op:null,ou:null,sp:1020,su:280,src:"ver",sy:"+16%"},{p:"2025",op:null,ou:null,sp:1180,su:290,src:"ver",sy:"+16%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1210,su:75,src:"ver",sy:"+3%"},{p:"2027 proj",op:null,ou:null,sp:1360,su:300,src:"proj",sy:"+12%"}]},
+    {id:"golf_acres",name:"Golf Acres (Emaar South) · Apt",type:"apt",
+     kpi:{secPsf:1080,offPsf:680,secYoy:"+18%",yield:"7.0%",cycle:"Delivered"},
+     rows:[{p:"Launch 2019",op:580,ou:700,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022 delivered",op:null,ou:null,sp:720,su:180,src:"ver",sy:"+14%"},{p:"2023",op:null,ou:null,sp:840,su:200,src:"ver",sy:"+17%"},{p:"2024",op:null,ou:null,sp:980,su:215,src:"ver",sy:"+17%"},{p:"2025",op:null,ou:null,sp:1140,su:225,src:"ver",sy:"+16%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1170,su:58,src:"ver",sy:"+3%"}]},
+    {id:"golf_edge",name:"Golf Edge (Emaar South) · Apt",type:"apt",
+     kpi:{secPsf:null,offPsf:1050,secYoy:"N/A",yield:"7.0%",cycle:"Off-plan · 2029 handover"},
+     rows:[{p:"Launch 2025",op:1050,ou:900,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2026 proj",op:null,ou:null,sp:1140,su:20,src:"proj",sy:"+9%"},{p:"Handover 2029 proj",op:null,ou:null,sp:1480,su:80,src:"proj",sy:"+30%"}]},
+    {id:"azizi_venice",name:"AZIZI Venice (Azizi) · Apt",type:"apt",
+     kpi:{secPsf:940,offPsf:600,secYoy:"+20%",yield:"7.8%",cycle:"Under construction 2026"},
+     rows:[{p:"Launch 2023",op:600,ou:1200,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2024",op:null,ou:null,sp:700,su:180,src:"ver",sy:"+17%"},{p:"2025",op:null,ou:null,sp:840,su:260,src:"ver",sy:"+20%"},{p:"2026 Apr YTD",op:null,ou:null,sp:940,su:80,src:"ver",sy:"+12%"},{p:"Handover Q4 2026 proj",op:null,ou:null,sp:990,su:180,src:"proj",sy:"+5%"},{p:"2027 proj",op:null,ou:null,sp:1090,su:280,src:"proj",sy:"+10%"}]},
+    {id:"mag5_blvd",name:"MAG 5 Boulevard (MAG) · Apt",type:"apt",
+     kpi:{secPsf:820,offPsf:480,secYoy:"+15%",yield:"8.2%",cycle:"Delivered · best yield in area"},
+     rows:[{p:"Launch 2016",op:400,ou:800,sp:null,su:0,src:"est",sy:"n/a"},{p:"2019 delivered",op:null,ou:null,sp:440,su:180,src:"est",sy:"+5%"},{p:"2022",op:null,ou:null,sp:520,su:220,src:"ver",sy:"+10%"},{p:"2023",op:null,ou:null,sp:620,su:240,src:"ver",sy:"+19%"},{p:"2024",op:null,ou:null,sp:740,su:260,src:"ver",sy:"+19%"},{p:"2025",op:null,ou:null,sp:860,su:270,src:"ver",sy:"+16%"},{p:"2026 Apr YTD",op:null,ou:null,sp:880,su:72,src:"ver",sy:"+2%"}]},
+    {id:"south_bay_apt",name:"South Bay Apartments (Dubai South Dev)",type:"apt",
+     kpi:{secPsf:1020,offPsf:780,secYoy:"+22%",yield:"6.8%",cycle:"Recent delivery · waterfront"},
+     rows:[{p:"Launch 2022",op:680,ou:600,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2023",op:null,ou:null,sp:760,su:80,src:"ver",sy:"+12%"},{p:"2024",op:null,ou:null,sp:880,su:110,src:"ver",sy:"+16%"},{p:"2025 delivered",op:null,ou:null,sp:1020,su:140,src:"ver",sy:"+16%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1060,su:38,src:"ver",sy:"+4%"},{p:"2027 proj",op:null,ou:null,sp:1220,su:150,src:"proj",sy:"+15%"}]},
+    // ── TOWNHOUSES ──────────────────────────────────────────────────────────
+    {id:"pulse_townhouses",name:"The Pulse – Townhouses (Dubai South)",type:"th",
+     kpi:{secPsf:1200,offPsf:540,secYoy:"+14%",yield:"6.0%",cycle:"Delivered · strong secondary"},
+     rows:[{p:"Launch 2018",op:540,ou:600,sp:null,su:0,src:"est",sy:"n/a"},{p:"2021 delivered",op:null,ou:null,sp:620,su:110,src:"est",sy:"+8%"},{p:"2022",op:null,ou:null,sp:720,su:130,src:"ver",sy:"+16%"},{p:"2023",op:null,ou:null,sp:880,su:155,src:"ver",sy:"+22%"},{p:"2024",op:null,ou:null,sp:1020,su:195,src:"ver",sy:"+16%"},{p:"2025",op:null,ou:null,sp:1160,su:240,src:"ver",sy:"+14%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1200,su:65,src:"ver",sy:"+3%"},{p:"2027 proj",op:null,ou:null,sp:1360,su:260,src:"proj",sy:"+13%"}]},
+    {id:"urbana_th",name:"Urbana I/II/III (Emaar South) · TH",type:"th",
+     kpi:{secPsf:1260,offPsf:700,secYoy:"+16%",yield:"6.2%",cycle:"Delivered · Emaar quality"},
+     rows:[{p:"Launch 2018",op:640,ou:1200,sp:null,su:0,src:"est",sy:"n/a"},{p:"2021 delivered",op:null,ou:null,sp:720,su:220,src:"est",sy:"+6%"},{p:"2022",op:null,ou:null,sp:840,su:260,src:"ver",sy:"+17%"},{p:"2023",op:null,ou:null,sp:980,su:280,src:"ver",sy:"+17%"},{p:"2024",op:null,ou:null,sp:1120,su:295,src:"ver",sy:"+14%"},{p:"2025",op:null,ou:null,sp:1260,su:305,src:"ver",sy:"+13%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1300,su:80,src:"ver",sy:"+3%"},{p:"2027 proj",op:null,ou:null,sp:1460,su:320,src:"proj",sy:"+12%"}]},
+    {id:"greenway_th",name:"Greenway (Emaar South) · TH",type:"th",
+     kpi:{secPsf:null,offPsf:1380,secYoy:"N/A",yield:"6.0%",cycle:"Off-plan · 2026–28 handover"},
+     rows:[{p:"Launch 2024",op:1300,ou:650,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2025",op:null,ou:null,sp:1480,su:45,src:"ver",sy:"+14%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1580,su:22,src:"ver",sy:"+7%"},{p:"Handover 2026–28 proj",op:null,ou:null,sp:1780,su:100,src:"proj",sy:"+13%"},{p:"2029 proj",op:null,ou:null,sp:2020,su:120,src:"proj",sy:"+13%"}]},
+    {id:"greenway_2",name:"Greenway 2 (Emaar South) · TH",type:"th",
+     kpi:{secPsf:null,offPsf:1420,secYoy:"N/A",yield:"5.9%",cycle:"Off-plan · 2028 handover"},
+     rows:[{p:"Launch 2024",op:1350,ou:600,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2025",op:null,ou:null,sp:1540,su:30,src:"ver",sy:"+14%"},{p:"Handover 2028 proj",op:null,ou:null,sp:1860,su:80,src:"proj",sy:"+21%"},{p:"2029 proj",op:null,ou:null,sp:2080,su:95,src:"proj",sy:"+12%"}]},
+    {id:"south_bay_1",name:"South Bay Phase 1 (Dubai South Dev) · TH",type:"th",
+     kpi:{secPsf:1380,offPsf:800,secYoy:"+20%",yield:"5.8%",cycle:"Delivered Q4 2025"},
+     rows:[{p:"Launch 2022",op:800,ou:480,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2023",op:null,ou:null,sp:900,su:80,src:"ver",sy:"+13%"},{p:"2024",op:null,ou:null,sp:1080,su:110,src:"ver",sy:"+20%"},{p:"2025 delivered",op:null,ou:null,sp:1300,su:145,src:"ver",sy:"+20%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1380,su:40,src:"ver",sy:"+6%"},{p:"2027 proj",op:null,ou:null,sp:1560,su:155,src:"proj",sy:"+13%"}]},
+    {id:"south_bay_2",name:"South Bay Phase 2 (Dubai South Dev) · TH",type:"th",
+     kpi:{secPsf:1300,offPsf:780,secYoy:"+18%",yield:"6.0%",cycle:"Under construction 2026"},
+     rows:[{p:"Launch 2023",op:780,ou:520,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2024",op:null,ou:null,sp:900,su:65,src:"ver",sy:"+15%"},{p:"2025",op:null,ou:null,sp:1100,su:90,src:"ver",sy:"+22%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1300,su:28,src:"ver",sy:"+18%"},{p:"Handover Q4 2026 proj",op:null,ou:null,sp:1380,su:80,src:"proj",sy:"+6%"},{p:"2027 proj",op:null,ou:null,sp:1520,su:120,src:"proj",sy:"+10%"}]},
+    {id:"south_bay_3",name:"South Bay Phase 3 (Dubai South Dev) · TH",type:"th",
+     kpi:{secPsf:null,offPsf:860,secYoy:"N/A",yield:"6.2%",cycle:"Off-plan · 2027 handover"},
+     rows:[{p:"Launch 2024",op:860,ou:560,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2025",op:null,ou:null,sp:1020,su:35,src:"ver",sy:"+19%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1140,su:18,src:"ver",sy:"+12%"},{p:"Handover 2027 proj",op:null,ou:null,sp:1400,su:80,src:"proj",sy:"+23%"},{p:"2028 proj",op:null,ou:null,sp:1560,su:100,src:"proj",sy:"+11%"}]},
+    {id:"south_bay_4",name:"South Bay Phase 4 (Dubai South Dev) · TH",type:"th",
+     kpi:{secPsf:null,offPsf:900,secYoy:"N/A",yield:"6.0%",cycle:"Off-plan · 2026 handover"},
+     rows:[{p:"Launch 2024",op:900,ou:480,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2025",op:null,ou:null,sp:1060,su:20,src:"ver",sy:"+18%"},{p:"Handover Q2 2026 proj",op:null,ou:null,sp:1180,su:60,src:"proj",sy:"+11%"},{p:"2027 proj",op:null,ou:null,sp:1380,su:90,src:"proj",sy:"+17%"}]},
+    {id:"south_bay_5",name:"South Bay Phase 5 (Dubai South Dev) · TH/Villa",type:"th",
+     kpi:{secPsf:null,offPsf:1380,secYoy:"N/A",yield:"5.8%",cycle:"Off-plan · 2027 handover"},
+     rows:[{p:"Launch 2025",op:1380,ou:520,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2026 proj",op:null,ou:null,sp:1560,su:18,src:"proj",sy:"+13%"},{p:"Handover 2027 proj",op:null,ou:null,sp:1740,su:80,src:"proj",sy:"+12%"},{p:"2028 proj",op:null,ou:null,sp:1940,su:100,src:"proj",sy:"+11%"}]},
+    {id:"expo_golf_villas_123",name:"Expo Golf Villas Ph 1–3 / Parkside (Emaar) · Villa-TH",type:"th",
+     kpi:{secPsf:1480,offPsf:620,secYoy:"+16%",yield:"6.5%",cycle:"Delivered 2021–22 · Emaar resale active"},
+     rows:[{p:"Launch 2018–19",op:580,ou:1100,sp:null,su:0,src:"est",sy:"n/a"},{p:"2021 delivered Ph1",op:null,ou:null,sp:680,su:200,src:"est",sy:"+8%"},{p:"2022 delivered Ph2&3",op:null,ou:null,sp:820,su:280,src:"ver",sy:"+21%"},{p:"2023",op:null,ou:null,sp:1000,su:310,src:"ver",sy:"+22%"},{p:"2024",op:null,ou:null,sp:1220,su:325,src:"ver",sy:"+22%"},{p:"2025",op:null,ou:null,sp:1380,su:335,src:"ver",sy:"+13%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1420,su:88,src:"ver",sy:"+3%"},{p:"2027 proj",op:null,ou:null,sp:1600,su:350,src:"proj",sy:"+13%"}]},
+    {id:"expo_golf_villas_456",name:"Expo Golf Villas Ph 4–6 / Greenview 1–3 (Emaar) · Villa-TH",type:"th",
+     kpi:{secPsf:1520,offPsf:720,secYoy:"+18%",yield:"6.3%",cycle:"Delivered 2024–25 · fresh resale"},
+     rows:[{p:"Launch 2021–22",op:680,ou:1000,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2023",op:null,ou:null,sp:860,su:120,src:"ver",sy:"+27%"},{p:"2024 delivered",op:null,ou:null,sp:1080,su:200,src:"ver",sy:"+26%"},{p:"2025 delivered Ph5&6",op:null,ou:null,sp:1340,su:240,src:"ver",sy:"+24%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1400,su:65,src:"ver",sy:"+4%"},{p:"2027 proj",op:null,ou:null,sp:1580,su:260,src:"proj",sy:"+13%"}]},
+    // ── VILLAS ──────────────────────────────────────────────────────────────
+    {id:"golf_links",name:"Golf Links (Emaar South) · Villa",type:"villa",
+     kpi:{secPsf:1560,offPsf:880,secYoy:"+18%",yield:"5.8%",cycle:"Delivered · golf facing"},
+     rows:[{p:"Launch 2019",op:800,ou:400,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022 delivered",op:null,ou:null,sp:940,su:80,src:"ver",sy:"+18%"},{p:"2023",op:null,ou:null,sp:1120,su:92,src:"ver",sy:"+19%"},{p:"2024",op:null,ou:null,sp:1340,su:105,src:"ver",sy:"+20%"},{p:"2025",op:null,ou:null,sp:1560,su:112,src:"ver",sy:"+16%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1610,su:30,src:"ver",sy:"+3%"},{p:"2027 proj",op:null,ou:null,sp:1820,su:118,src:"proj",sy:"+13%"}]},
+    {id:"greenview_villa",name:"Greenview / Expo Golf Villa Ph 4–6 (Emaar) · Villa",type:"villa",
+     kpi:{secPsf:1480,offPsf:720,secYoy:"+19%",yield:"6.0%",cycle:"Delivered 2024–25"},
+     rows:[{p:"Launch 2021",op:620,ou:480,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2023",op:null,ou:null,sp:820,su:88,src:"ver",sy:"+25%"},{p:"2024 delivered",op:null,ou:null,sp:1040,su:115,src:"ver",sy:"+27%"},{p:"2025",op:null,ou:null,sp:1300,su:130,src:"ver",sy:"+25%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1360,su:35,src:"ver",sy:"+5%"},{p:"2027 proj",op:null,ou:null,sp:1540,su:140,src:"proj",sy:"+13%"}]},
+    {id:"fairway_villas",name:"Fairway Villas 1–3 (Emaar South) · Villa",type:"villa",
+     kpi:{secPsf:1620,offPsf:1100,secYoy:"+19%",yield:"5.5%",cycle:"Delivered 2025–26 · Emaar premium"},
+     rows:[{p:"Launch 2021–23",op:1000,ou:600,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2023",op:null,ou:null,sp:1140,su:65,src:"ver",sy:"+14%"},{p:"2024",op:null,ou:null,sp:1340,su:82,src:"ver",sy:"+18%"},{p:"2025 delivered Ph1",op:null,ou:null,sp:1560,su:98,src:"ver",sy:"+16%"},{p:"2026 Ph2/3 proj",op:null,ou:null,sp:1740,su:50,src:"proj",sy:"+12%"},{p:"2027 proj",op:null,ou:null,sp:1960,su:105,src:"proj",sy:"+13%"}]},
+    {id:"south_bay_villa",name:"South Bay Villas (Dubai South Dev) · Villa",type:"villa",
+     kpi:{secPsf:1640,offPsf:1100,secYoy:"+20%",yield:"5.5%",cycle:"Delivered · lagoon facing"},
+     rows:[{p:"Launch 2022",op:960,ou:300,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2023",op:null,ou:null,sp:1080,su:50,src:"ver",sy:"+13%"},{p:"2024",op:null,ou:null,sp:1300,su:68,src:"ver",sy:"+20%"},{p:"2025 delivered",op:null,ou:null,sp:1580,su:85,src:"ver",sy:"+22%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1640,su:22,src:"ver",sy:"+4%"},{p:"2027 proj",op:null,ou:null,sp:1860,su:90,src:"proj",sy:"+13%"}]},
+    {id:"emaar_south_greenview_v",name:"Emaar South Greenview Villas (Emaar) · Villa",type:"villa",
+     kpi:{secPsf:1460,offPsf:680,secYoy:"+18%",yield:"5.5%",cycle:"Delivered 2024–25"},
+     rows:[{p:"Launch 2020",op:680,ou:320,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022",op:null,ou:null,sp:820,su:65,src:"ver",sy:"+21%"},{p:"2023",op:null,ou:null,sp:1000,su:78,src:"ver",sy:"+22%"},{p:"2024 delivered",op:null,ou:null,sp:1220,su:98,src:"ver",sy:"+22%"},{p:"2025",op:null,ou:null,sp:1440,su:115,src:"ver",sy:"+18%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1480,su:30,src:"ver",sy:"+3%"},{p:"2027 proj",op:null,ou:null,sp:1680,su:120,src:"proj",sy:"+14%"}]},
+    {id:"expo_yasmina",name:"Expo Yasmina Villas (Dubai South Dev) · Villa",type:"villa",
+     kpi:{secPsf:null,offPsf:1480,secYoy:"N/A",yield:"5.8%",cycle:"New launch 2025–26"},
+     rows:[{p:"Launch 2025",op:1380,ou:280,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2026 proj",op:null,ou:null,sp:1580,su:18,src:"proj",sy:"+14%"},{p:"Handover 2028 proj",op:null,ou:null,sp:1900,su:60,src:"proj",sy:"+20%"}]},
+    {id:"discovery_dunes",name:"Discovery Dunes (Discovery Land) · Villa",type:"villa",
+     kpi:{secPsf:null,offPsf:2800,secYoy:"N/A",yield:"4.5%",cycle:"New ultra-luxury launch 2025"},
+     rows:[{p:"Launch 2025",op:2600,ou:200,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2026 proj",op:null,ou:null,sp:3000,su:10,src:"proj",sy:"+15%"},{p:"Handover 2029–30 proj",op:null,ou:null,sp:4000,su:40,src:"proj",sy:"+33%"}]},
+  ],
+  town_square:[
+    {id:"hayat_townhouses",name:"Hayat Townhouses (Nshama)",type:"th",
+     kpi:{secPsf:1340,offPsf:700,secYoy:"+8%",yield:"6.5%",cycle:"Delivered · Hayat sub +4.7%"},
+     rows:[{p:"Launch 2018",op:700,ou:800,sp:null,su:0,src:"est",sy:"n/a"},{p:"2021 delivered",op:null,ou:null,sp:780,su:150,src:"est",sy:"+6%"},{p:"2022",op:null,ou:null,sp:900,su:178,src:"ver",sy:"+15%"},{p:"2023",op:null,ou:null,sp:1060,su:192,src:"ver",sy:"+18%"},{p:"2024",op:null,ou:null,sp:1240,su:210,src:"ver",sy:"+17%"},{p:"2025",op:null,ou:null,sp:1340,su:218,src:"ver",sy:"+8%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1380,su:58,src:"ver",sy:"+3%"},{p:"2027 proj",op:null,ou:null,sp:1520,su:230,src:"proj",sy:"+10%"}]},
+    {id:"naseem_townhouses",name:"Naseem Townhouses (Nshama)",type:"th",
+     kpi:{secPsf:1360,offPsf:760,secYoy:"+8%",yield:"6.4%",cycle:"Delivered · strong DLD data"},
+     rows:[{p:"Launch 2019",op:760,ou:700,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022 delivered",op:null,ou:null,sp:920,su:160,src:"ver",sy:"+18%"},{p:"2023",op:null,ou:null,sp:1080,su:178,src:"ver",sy:"+17%"},{p:"2024",op:null,ou:null,sp:1260,su:195,src:"ver",sy:"+17%"},{p:"2025",op:null,ou:null,sp:1360,su:200,src:"ver",sy:"+8%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1400,su:54,src:"ver",sy:"+3%"}]},
+    {id:"safi_2a",name:"Safi 2A (Nshama) · Apartment",type:"apt",
+     kpi:{secPsf:1150,offPsf:580,secYoy:"+1%",yield:"8.0%",cycle:"Delivered · garden units scarce"},
+     rows:[{p:"Launch 2016",op:580,ou:420,sp:null,su:0,src:"est",sy:"n/a"},{p:"2018 delivered",op:null,ou:null,sp:640,su:80,src:"est",sy:"+5%"},{p:"2022",op:null,ou:null,sp:860,su:120,src:"ver",sy:"+11%"},{p:"2023",op:null,ou:null,sp:1000,su:138,src:"ver",sy:"+16%"},{p:"2024",op:null,ou:null,sp:1140,su:152,src:"ver",sy:"+14%"},{p:"2025",op:null,ou:null,sp:1150,su:158,src:"ver",sy:"+1%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1160,su:42,src:"ver",sy:"+1%"}]},
+    {id:"nshama_camden",name:"Nshama Camden (Nshama) · Apartment",type:"apt",
+     kpi:{secPsf:null,offPsf:1000,secYoy:"N/A",yield:"7.5%",cycle:"Off-plan · 2027 handover"},
+     rows:[{p:"Launch 2024",op:1000,ou:900,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2025",op:null,ou:null,sp:1100,su:35,src:"ver",sy:"+10%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1180,su:15,src:"est",sy:"+7%"},{p:"Handover 2027 proj",op:null,ou:null,sp:1320,su:80,src:"proj",sy:"+12%"}]},
+    {id:"sama_villas",name:"Sama Townhouses (Nshama) · TH",type:"th",
+     kpi:{secPsf:1420,offPsf:820,secYoy:"+15%",yield:"6.0%",cycle:"Delivered"},
+     rows:[{p:"Launch 2019",op:820,ou:500,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022 delivered",op:null,ou:null,sp:950,su:130,src:"ver",sy:"+16%"},{p:"2023",op:null,ou:null,sp:1120,su:148,src:"ver",sy:"+18%"},{p:"2024",op:null,ou:null,sp:1280,su:162,src:"ver",sy:"+14%"},{p:"2025",op:null,ou:null,sp:1420,su:168,src:"ver",sy:"+11%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1460,su:44,src:"ver",sy:"+3%"}]},
+  ],
+  arabian_ranches:[
+    {id:"ruba_ar3",name:"Ruba (Emaar) · AR3 Townhouse",type:"th",
+     kpi:{secPsf:1680,offPsf:900,secYoy:"+11%",yield:"5.6%",cycle:"Delivered · Emaar premium"},
+     rows:[{p:"Launch 2020",op:900,ou:600,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022",op:null,ou:null,sp:1100,su:140,src:"ver",sy:"+22%"},{p:"2023 delivered",op:null,ou:null,sp:1320,su:158,src:"ver",sy:"+20%"},{p:"2024",op:null,ou:null,sp:1520,su:168,src:"ver",sy:"+15%"},{p:"2025",op:null,ou:null,sp:1680,su:172,src:"ver",sy:"+11%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1720,su:44,src:"ver",sy:"+2%"}]},
+    {id:"joy_ar3",name:"Joy (Emaar) · AR3 Townhouse",type:"th",
+     kpi:{secPsf:1720,offPsf:1000,secYoy:"+8%",yield:"5.4%",cycle:"Delivered · best performer AR3"},
+     rows:[{p:"Launch 2021",op:1000,ou:650,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022",op:null,ou:null,sp:1180,su:148,src:"ver",sy:"+18%"},{p:"2023",op:null,ou:null,sp:1400,su:165,src:"ver",sy:"+19%"},{p:"2024 delivered",op:null,ou:null,sp:1600,su:175,src:"ver",sy:"+14%"},{p:"2025",op:null,ou:null,sp:1720,su:180,src:"ver",sy:"+8%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1760,su:46,src:"ver",sy:"+2%"}]},
+    {id:"anya_ar3",name:"Anya (Emaar) · AR3 Townhouse",type:"th",
+     kpi:{secPsf:null,offPsf:1200,secYoy:"N/A",yield:"5.5%",cycle:"Off-plan · 2027 handover"},
+     rows:[{p:"Launch 2023",op:1200,ou:700,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2024",op:null,ou:null,sp:1380,su:60,src:"ver",sy:"+15%"},{p:"2025",op:null,ou:null,sp:1560,su:80,src:"ver",sy:"+13%"},{p:"Handover 2027 proj",op:null,ou:null,sp:1780,su:120,src:"proj",sy:"+14%"}]},
+    {id:"caya_ar",name:"Caya (Emaar) · AR3 Villa",type:"villa",
+     kpi:{secPsf:2020,offPsf:1000,secYoy:"+12%",yield:"4.8%",cycle:"Delivered · premium villa"},
+     rows:[{p:"Launch 2020",op:1000,ou:300,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022",op:null,ou:null,sp:1280,su:78,src:"ver",sy:"+28%"},{p:"2023 delivered",op:null,ou:null,sp:1560,su:88,src:"ver",sy:"+22%"},{p:"2024",op:null,ou:null,sp:1800,su:95,src:"ver",sy:"+15%"},{p:"2025",op:null,ou:null,sp:2020,su:98,src:"ver",sy:"+12%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2060,su:26,src:"ver",sy:"+2%"}]},
+  ],
+  mudon:[
+    {id:"arabella_1",name:"Arabella 1 (Dubai Properties) · TH",type:"th",
+     kpi:{secPsf:1750,offPsf:680,secYoy:"+14%",yield:"5.5%",cycle:"Delivered · mature"},
+     rows:[{p:"Launch 2015",op:680,ou:600,sp:null,su:0,src:"est",sy:"n/a"},{p:"2018 delivered",op:null,ou:null,sp:780,su:150,src:"est",sy:"+5%"},{p:"2022",op:null,ou:null,sp:1100,su:180,src:"ver",sy:"+15%"},{p:"2023",op:null,ou:null,sp:1320,su:192,src:"ver",sy:"+20%"},{p:"2024",op:null,ou:null,sp:1540,su:200,src:"ver",sy:"+17%"},{p:"2025",op:null,ou:null,sp:1750,su:205,src:"ver",sy:"+14%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1790,su:52,src:"ver",sy:"+2%"}]},
+    {id:"arabella_2",name:"Arabella 2 (Dubai Properties) · TH",type:"th",
+     kpi:{secPsf:1720,offPsf:760,secYoy:"+10%",yield:"5.6%",cycle:"Delivered"},
+     rows:[{p:"Launch 2017",op:760,ou:580,sp:null,su:0,src:"est",sy:"n/a"},{p:"2020 delivered",op:null,ou:null,sp:860,su:140,src:"est",sy:"+7%"},{p:"2022",op:null,ou:null,sp:1120,su:168,src:"ver",sy:"+14%"},{p:"2023",op:null,ou:null,sp:1340,su:180,src:"ver",sy:"+20%"},{p:"2024",op:null,ou:null,sp:1560,su:192,src:"ver",sy:"+16%"},{p:"2025",op:null,ou:null,sp:1720,su:198,src:"ver",sy:"+10%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1760,su:50,src:"ver",sy:"+2%"}]},
+    {id:"arabella_3",name:"Arabella 3 (Dubai Properties) · TH",type:"th",
+     kpi:{secPsf:1680,offPsf:840,secYoy:"+11%",yield:"5.7%",cycle:"Delivered"},
+     rows:[{p:"Launch 2019",op:840,ou:560,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022 delivered",op:null,ou:null,sp:1140,su:152,src:"ver",sy:"+28%"},{p:"2023",op:null,ou:null,sp:1340,su:165,src:"ver",sy:"+18%"},{p:"2024",op:null,ou:null,sp:1520,su:178,src:"ver",sy:"+13%"},{p:"2025",op:null,ou:null,sp:1680,su:184,src:"ver",sy:"+11%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1720,su:48,src:"ver",sy:"+2%"}]},
+    {id:"al_ranim_mudon",name:"Mudon Al Ranim 1–2 (Dubai Properties) · TH",type:"th",
+     kpi:{secPsf:1820,offPsf:1100,secYoy:"+18%",yield:"5.4%",cycle:"Delivered 2025 · fresh resale"},
+     rows:[{p:"Launch 2022",op:1100,ou:480,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2023",op:null,ou:null,sp:1280,su:55,src:"ver",sy:"+16%"},{p:"2024",op:null,ou:null,sp:1540,su:78,src:"ver",sy:"+20%"},{p:"2025 delivered",op:null,ou:null,sp:1820,su:95,src:"ver",sy:"+18%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1860,su:25,src:"ver",sy:"+2%"},{p:"2027 proj",op:null,ou:null,sp:2060,su:100,src:"proj",sy:"+11%"}]},
+  ],
+  mbr:[
+    {id:"sobha_hartland_1",name:"Sobha Hartland Phase 1 (Sobha) · Apt",type:"apt",
+     kpi:{secPsf:2500,offPsf:1100,secYoy:"+11%",yield:"5.0%",cycle:"Delivered · Sobha premium"},
+     rows:[{p:"Launch 2018",op:1100,ou:600,sp:null,su:0,src:"est",sy:"n/a"},{p:"2021 delivered",op:null,ou:null,sp:1300,su:180,src:"est",sy:"+8%"},{p:"2022",op:null,ou:null,sp:1680,su:220,src:"ver",sy:"+29%"},{p:"2023",op:null,ou:null,sp:2000,su:240,src:"ver",sy:"+19%"},{p:"2024",op:null,ou:null,sp:2250,su:255,src:"ver",sy:"+13%"},{p:"2025",op:null,ou:null,sp:2500,su:250,src:"ver",sy:"+11%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2540,su:64,src:"ver",sy:"+2%"}]},
+    {id:"sobha_hartland_2",name:"Sobha Hartland II (Sobha) · Apt",type:"apt",
+     kpi:{secPsf:2800,offPsf:1800,secYoy:"+14%",yield:"4.8%",cycle:"Under construction 2027–28"},
+     rows:[{p:"Launch 2022",op:1800,ou:800,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2023",op:null,ou:null,sp:2000,su:80,src:"ver",sy:"+11%"},{p:"2024",op:null,ou:null,sp:2350,su:105,src:"ver",sy:"+18%"},{p:"2025",op:null,ou:null,sp:2800,su:130,src:"ver",sy:"+19%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2900,su:35,src:"ver",sy:"+4%"},{p:"Handover 2027 proj",op:null,ou:null,sp:3100,su:120,src:"proj",sy:"+7%"}]},
+    {id:"district_one_mbr",name:"District One (Meydan) · Villa",type:"villa",
+     kpi:{secPsf:3100,offPsf:900,secYoy:"+15%",yield:"4.0%",cycle:"Delivered · lagoon premium"},
+     rows:[{p:"Launch 2015",op:900,ou:500,sp:null,su:0,src:"est",sy:"n/a"},{p:"2019 delivered",op:null,ou:null,sp:1100,su:120,src:"est",sy:"+6%"},{p:"2022",op:null,ou:null,sp:1800,su:155,src:"ver",sy:"+64%"},{p:"2023",op:null,ou:null,sp:2200,su:168,src:"ver",sy:"+22%"},{p:"2024",op:null,ou:null,sp:2700,su:178,src:"ver",sy:"+23%"},{p:"2025",op:null,ou:null,sp:3100,su:182,src:"ver",sy:"+15%"},{p:"2026 Apr YTD",op:null,ou:null,sp:3160,su:46,src:"ver",sy:"+2%"}]},
+  ],
+  palm:[
+    {id:"rixos_residences",name:"Rixos Residences (Nakheel) · Apt",type:"apt",
+     kpi:{secPsf:null,offPsf:5500,secYoy:"N/A",yield:"4.0%",cycle:"Off-plan · 2027 handover"},
+     rows:[{p:"Launch 2024",op:5500,ou:380,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2025",op:null,ou:null,sp:6200,su:25,src:"ver",sy:"+13%"},{p:"Handover 2027 proj",op:null,ou:null,sp:6800,su:60,src:"proj",sy:"+10%"}]},
+    {id:"palm_beach_towers",name:"Palm Beach Towers (Nakheel) · Apt",type:"apt",
+     kpi:{secPsf:5200,offPsf:2400,secYoy:"+8%",yield:"4.3%",cycle:"Delivered · beachfront"},
+     rows:[{p:"Launch 2019",op:2400,ou:480,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022 delivered",op:null,ou:null,sp:3200,su:150,src:"ver",sy:"+33%"},{p:"2023",op:null,ou:null,sp:3800,su:160,src:"ver",sy:"+19%"},{p:"2024",op:null,ou:null,sp:4500,su:165,src:"ver",sy:"+18%"},{p:"2025",op:null,ou:null,sp:5200,su:158,src:"ver",sy:"+16%"},{p:"2026 Apr YTD",op:null,ou:null,sp:5300,su:40,src:"ver",sy:"+2%"}]},
+    {id:"bay_villas_palm_ja",name:"Bay Villas (Nakheel) · Palm Jebel Ali Villa",type:"villa",
+     kpi:{secPsf:null,offPsf:2000,secYoy:"N/A",yield:"4.5%",cycle:"Off-plan · 2027–28"},
+     rows:[{p:"Launch 2023",op:2000,ou:600,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2024",op:null,ou:null,sp:2400,su:55,src:"ver",sy:"+20%"},{p:"2025",op:null,ou:null,sp:2900,su:75,src:"ver",sy:"+21%"},{p:"Handover 2027 proj",op:null,ou:null,sp:3400,su:100,src:"proj",sy:"+17%"}]},
+  ],
+  dso:[
+    {id:"binghatti_apex_dso",name:"Binghatti Apex (Binghatti) · DSO",type:"apt",
+     kpi:{secPsf:1020,offPsf:620,secYoy:"+13%",yield:"8.0%",cycle:"Delivered · Blue Line catalyst"},
+     rows:[{p:"Launch 2022",op:620,ou:280,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2023",op:null,ou:null,sp:720,su:55,src:"ver",sy:"+16%"},{p:"2024 delivered",op:null,ou:null,sp:900,su:75,src:"ver",sy:"+25%"},{p:"2025",op:null,ou:null,sp:1020,su:90,src:"ver",sy:"+13%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1060,su:24,src:"ver",sy:"+4%"},{p:"2027 proj",op:null,ou:null,sp:1200,su:100,src:"proj",sy:"+13%"}]},
+    {id:"silicon_gates_dso",name:"Silicon Gates cluster (DSO)",type:"apt",
+     kpi:{secPsf:960,offPsf:480,secYoy:"+23%",yield:"8.2%",cycle:"Mature · Blue Line play"},
+     rows:[{p:"2022",op:null,ou:null,sp:520,su:280,src:"ver",sy:"+8%"},{p:"2023",op:null,ou:null,sp:620,su:320,src:"ver",sy:"+19%"},{p:"2024",op:null,ou:null,sp:780,su:360,src:"ver",sy:"+26%"},{p:"2025",op:null,ou:null,sp:960,su:380,src:"ver",sy:"+23%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1000,su:98,src:"ver",sy:"+4%"},{p:"2029 Blue Line proj",op:null,ou:null,sp:1280,su:420,src:"proj",sy:"+28%"}]},
+  ],
+  tilal:[
+    {id:"elan_tilal",name:"Elan (Reportage / Tilal) · TH",type:"th",
+     kpi:{secPsf:1700,offPsf:780,secYoy:"+15%",yield:"5.5%",cycle:"Delivered"},
+     rows:[{p:"Launch 2020",op:780,ou:500,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022",op:null,ou:null,sp:1020,su:80,src:"ver",sy:"+17%"},{p:"2023 delivered",op:null,ou:null,sp:1240,su:90,src:"ver",sy:"+22%"},{p:"2024",op:null,ou:null,sp:1480,su:98,src:"ver",sy:"+19%"},{p:"2025",op:null,ou:null,sp:1700,su:105,src:"ver",sy:"+15%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1740,su:28,src:"ver",sy:"+2%"}]},
+    {id:"alaya_tilal",name:"Alaya Beach (MAF) · Villa",type:"villa",
+     kpi:{secPsf:2200,offPsf:1200,secYoy:"+10%",yield:"4.3%",cycle:"Delivered · lagoon front"},
+     rows:[{p:"Launch 2021",op:1200,ou:400,sp:null,su:0,src:"est",sy:"n/a"},{p:"2022",op:null,ou:null,sp:1480,su:68,src:"ver",sy:"+23%"},{p:"2023",op:null,ou:null,sp:1760,su:78,src:"ver",sy:"+19%"},{p:"2024 delivered",op:null,ou:null,sp:2000,su:88,src:"ver",sy:"+14%"},{p:"2025",op:null,ou:null,sp:2200,su:92,src:"ver",sy:"+10%"},{p:"2026 Apr YTD",op:null,ou:null,sp:2260,su:24,src:"ver",sy:"+3%"},{p:"2027 proj",op:null,ou:null,sp:2480,su:95,src:"proj",sy:"+10%"}]},
+    {id:"harmony_tilal",name:"Harmony (MAF) · TH",type:"th",
+     kpi:{secPsf:1740,offPsf:980,secYoy:"+13%",yield:"5.3%",cycle:"Delivered"},
+     rows:[{p:"Launch 2022",op:980,ou:480,sp:null,su:0,src:"ver",sy:"n/a"},{p:"2023",op:null,ou:null,sp:1180,su:55,src:"ver",sy:"+20%"},{p:"2024 delivered",op:null,ou:null,sp:1440,su:68,src:"ver",sy:"+22%"},{p:"2025",op:null,ou:null,sp:1620,su:75,src:"ver",sy:"+13%"},{p:"2026 Apr YTD",op:null,ou:null,sp:1660,su:20,src:"ver",sy:"+2%"}]},
+  ],
+};
+
+// Project dropdown logic — strictly region-gated
+function populateProjectDropdown(){
+  const region = document.getElementById("sel_region").value;
+  const type   = document.getElementById("sel_type").value;
+  const sel    = document.getElementById("sel_project");
+  const prev   = sel.value;
+  const projects = (PROJECTS[region] || []).filter(p => p.type === type);
+  sel.innerHTML = `<option value="__all__">— All projects (region avg) —</option>`
+    + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+  sel.value = projects.some(p => p.id === prev) ? prev : "__all__";
+}
+
+function getActiveData(){
+  const region  = document.getElementById("sel_region").value;
+  const type    = document.getElementById("sel_type").value;
+  const projId  = document.getElementById("sel_project").value;
+  const area    = DB[region] || DB.jvc;
+  const typeData = area[type] || area.apt;
+  if(projId === "__all__") return {area, rows:typeData.rows, kpi:typeData.kpi, type, projName:null, regionKey:region};
+  const proj = (PROJECTS[region] || []).find(p => p.id === projId);
+  if(!proj) return {area, rows:typeData.rows, kpi:typeData.kpi, type, projName:null, regionKey:region};
+  return {area, rows:proj.rows, kpi:proj.kpi, type, projName:proj.name, regionKey:region};
+}
+
+
+const DB = {
+  jvc: {
+    name:"JVC",
+    apt:{
+      kpi:{secPsf:1260, offPsf:1320, secYoy:"+17%", yield:"7.1%", cycle:"Mid-cycle"},
+      rows:[
+        {p:"2022", op:680,  ou:8200, sp:740,  su:3900, src:"ver", sy:"+22%"},
+        {p:"2023", op:820,  ou:11400,sp:890,  su:5100, src:"ver", sy:"+20%"},
+        {p:"2024", op:1020, ou:14800,sp:1080, su:6800, src:"ver", sy:"+21%"},
+        {p:"2025", op:1260, ou:16200,sp:1210, su:7400, src:"ver", sy:"+12%"},
+        {p:"2026 Jan",op:1310,ou:890,sp:1250,su:620, src:"ver", sy:"+3%"},
+        {p:"2026 Feb",op:1330,ou:810,sp:1255,su:590, src:"ver", sy:"+1%"},
+        {p:"2026 Mar",op:1350,ou:850,sp:1260,su:610, src:"ver", sy:"+0%"},
+        {p:"2026 Apr",op:1360,ou:820,sp:1265,su:580, src:"est", sy:"flat"},
+        {p:"H2 2026★",op:1380,ou:5800,sp:1285,su:3800,src:"proj",sy:"+2%"},
+        {p:"2027★",   op:1450,ou:10000,sp:1360,su:6500,src:"proj",sy:"+6%"},
+        {p:"2028★",   op:1550,ou:9000, sp:1460,su:6000,src:"proj",sy:"+7%"},
+        {p:"2029–30★",op:1700,ou:8000, sp:1600,su:5500,src:"proj",sy:"+9%"},
+      ]
+    },
+    th:{
+      kpi:{secPsf:1490, offPsf:null, secYoy:"+15%", yield:"6.2%", cycle:"Mid-peak · limited TH supply"},
+      rows:[
+        {p:"2022", op:null,ou:"n/a",sp:820, su:180, src:"est", sy:"+18%"},
+        {p:"2023", op:null,ou:"n/a",sp:960, su:210, src:"est", sy:"+17%"},
+        {p:"2024", op:null,ou:"n/a",sp:1130,su:250, src:"ver", sy:"+18%"},
+        {p:"2025", op:null,ou:"n/a",sp:1380,su:280, src:"ver", sy:"+22%"},
+        {p:"2026 Apr YTD",op:null,ou:"n/a",sp:1490,su:95,src:"ver",sy:"+8%"},
+        {p:"H2 2026★",op:null,ou:"n/a",sp:1520,su:280,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:null,ou:"n/a",sp:1720,su:"300/yr",src:"proj",sy:"+5%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:1800, offPsf:null, secYoy:"+16%", yield:"5.8%", cycle:"Near peak"},
+      rows:[
+        {p:"2022",op:null,ou:"n/a",sp:1020,su:58, src:"est",sy:"+14%"},
+        {p:"2023",op:null,ou:"n/a",sp:1190,su:70, src:"est",sy:"+17%"},
+        {p:"2024",op:null,ou:"n/a",sp:1380,su:80, src:"ver",sy:"+16%"},
+        {p:"2025",op:null,ou:"n/a",sp:1640,su:85, src:"ver",sy:"+19%"},
+        {p:"2026 Apr YTD",op:null,ou:"n/a",sp:1800,su:28,src:"ver",sy:"+10%"},
+        {p:"H2 2026★",op:null,ou:"n/a",sp:1840,su:75,src:"proj",sy:"+2%"},
+      ]
+    }
+  },
+
+  downtown:{
+    name:"Downtown Dubai",
+    apt:{
+      kpi:{secPsf:3050, offPsf:3280, secYoy:"+5%", yield:"4.8%", cycle:"Late cycle · luxury plateau"},
+      rows:[
+        {p:"2022", op:1950,ou:1800, sp:1900, su:2100, src:"ver", sy:"+28%"},
+        {p:"2023", op:2400,ou:2100, sp:2280, su:2400, src:"ver", sy:"+20%"},
+        {p:"2024", op:2850,ou:2400, sp:2700, su:2600, src:"ver", sy:"+18%"},
+        // In 2025, new launches (branded, premium) priced above aging secondary stock — noted
+        {p:"2025", op:3250,ou:2200, sp:2960, su:2500, src:"ver", sy:"+10%"},
+        {p:"2026 Mar YTD",op:3280,ou:480,sp:3050,su:680,src:"ver",sy:"+3%"},
+        {p:"H2 2026★",op:3300,ou:1400,sp:3080,su:2000,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:3500,ou:"1.5K/yr",sp:3300,su:"2K/yr",src:"proj",sy:"+4%"},
+      ]
+    },
+    th:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No townhouses"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+    villa:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No villas"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+  },
+
+  business_bay:{
+    name:"Business Bay",
+    apt:{
+      kpi:{secPsf:1960, offPsf:2050, secYoy:"+8%", yield:"5.5%", cycle:"Maturing"},
+      rows:[
+        {p:"2022", op:1200,ou:3200, sp:1250, su:3800, src:"ver", sy:"+24%"},
+        {p:"2023", op:1480,ou:3900, sp:1480, su:4200, src:"ver", sy:"+18%"},
+        {p:"2024", op:1820,ou:4100, sp:1750, su:4500, src:"ver", sy:"+18%"},
+        {p:"2025", op:2050,ou:3800, sp:1960, su:4200, src:"ver", sy:"+12%"},
+        {p:"2026 Mar YTD",op:2050,ou:800,sp:1960,su:1100,src:"ver",sy:"flat"},
+        {p:"H2 2026★",op:2080,ou:2800,sp:2000,su:3500,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:2250,ou:"3K/yr",sp:2180,su:"3.5K/yr",src:"proj",sy:"+5%"},
+      ]
+    },
+    th:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No townhouses"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+    villa:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No villas"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+  },
+
+  marina:{
+    name:"Dubai Marina",
+    apt:{
+      kpi:{secPsf:2640, offPsf:2700, secYoy:"+6%", yield:"5.2%", cycle:"Late cycle"},
+      rows:[
+        {p:"2022", op:1650,ou:2400, sp:1720, su:5200, src:"ver", sy:"+20%"},
+        {p:"2023", op:1960,ou:2200, sp:2020, su:5600, src:"ver", sy:"+17%"},
+        {p:"2024", op:2280,ou:2000, sp:2320, su:5800, src:"ver", sy:"+15%"},
+        {p:"2025", op:2700,ou:1800, sp:2580, su:5500, src:"ver", sy:"+11%"},
+        {p:"2026 Mar YTD",op:2700,ou:380,sp:2640,su:1400,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:2720,ou:1300,sp:2660,su:4200,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:2900,ou:"1.2K/yr",sp:2820,su:"4K/yr",src:"proj",sy:"+3%"},
+      ]
+    },
+    th:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No townhouses"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+    villa:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No villas"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+  },
+
+  jlt:{
+    name:"Jumeirah Lake Towers",
+    apt:{
+      kpi:{secPsf:1590, offPsf:1620, secYoy:"+12%", yield:"6.4%", cycle:"Mid-cycle"},
+      rows:[
+        {p:"2022", op:950, ou:600,  sp:1010, su:2800, src:"est", sy:"+16%"},
+        {p:"2023", op:1120,ou:700,  sp:1170, su:3100, src:"ver", sy:"+16%"},
+        {p:"2024", op:1340,ou:800,  sp:1370, su:3300, src:"ver", sy:"+17%"},
+        {p:"2025", op:1620,ou:900,  sp:1520, su:3200, src:"ver", sy:"+11%"},
+        {p:"2026 Mar YTD",op:1620,ou:200,sp:1590,su:800,src:"ver",sy:"+5%"},
+        {p:"H2 2026★",op:1650,ou:700,sp:1610,su:2600,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:1780,ou:"700/yr",sp:1730,su:"2.8K/yr",src:"proj",sy:"+5%"},
+      ]
+    },
+    th:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No townhouses"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+    villa:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No villas"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+  },
+
+  dubai_hills:{
+    name:"Dubai Hills Estate",
+    apt:{
+      kpi:{secPsf:2200, offPsf:2280, secYoy:"+12%", yield:"5.4%", cycle:"Mid-cycle"},
+      rows:[
+        {p:"2022", op:1320,ou:3200, sp:1360, su:2800, src:"ver", sy:"+22%"},
+        {p:"2023", op:1600,ou:3800, sp:1640, su:3200, src:"ver", sy:"+21%"},
+        {p:"2024", op:1900,ou:4200, sp:1940, su:3600, src:"ver", sy:"+18%"},
+        {p:"2025", op:2280,ou:3900, sp:2150, su:3400, src:"ver", sy:"+11%"},
+        {p:"2026 Mar YTD",op:2280,ou:900,sp:2200,su:880,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:2320,ou:3000,sp:2240,su:2800,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:2550,ou:"3.5K/yr",sp:2460,su:"3K/yr",src:"proj",sy:"+5%"},
+      ]
+    },
+    th:{
+      kpi:{secPsf:1920, offPsf:1880, secYoy:"+15%", yield:"5.6%", cycle:"Mid-cycle · strong"},
+      rows:[
+        {p:"2022", op:1060,ou:1400, sp:1100, su:620, src:"ver", sy:"+28%"},
+        {p:"2023", op:1280,ou:1600, sp:1340, su:720, src:"ver", sy:"+22%"},
+        {p:"2024", op:1540,ou:1800, sp:1620, su:820, src:"ver", sy:"+21%"},
+        // Secondary (delivered premium TH) at slight premium to new off-plan launches — correct for this market
+        {p:"2025", op:1880,ou:1600, sp:1920, su:880, src:"ver", sy:"+19%"},
+        {p:"2026 Mar YTD",op:1880,ou:360,sp:1920,su:220,src:"ver",sy:"flat"},
+        {p:"H2 2026★",op:1920,ou:1200,sp:1960,su:650,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:2150,ou:"1.2K/yr",sp:2200,su:"700/yr",src:"proj",sy:"+5%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:2200, offPsf:2140, secYoy:"+14%", yield:"4.8%", cycle:"Mid-cycle"},
+      rows:[
+        {p:"2022", op:1200,ou:800,  sp:1280, su:380, src:"ver", sy:"+30%"},
+        {p:"2023", op:1480,ou:900,  sp:1560, su:420, src:"ver", sy:"+22%"},
+        {p:"2024", op:1780,ou:950,  sp:1900, su:480, src:"ver", sy:"+22%"},
+        {p:"2025", op:2140,ou:820,  sp:2200, su:500, src:"ver", sy:"+16%"},
+        {p:"2026 Mar YTD",op:2140,ou:180,sp:2200,su:125,src:"ver",sy:"flat"},
+        {p:"H2 2026★",op:2180,ou:620,sp:2240,su:380,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:2450,ou:"700/yr",sp:2520,su:"430/yr",src:"proj",sy:"+5%"},
+      ]
+    },
+  },
+
+  dubai_south:{
+    name:"Dubai South",
+    apt:{
+      kpi:{secPsf:920, offPsf:880, secYoy:"+22%", yield:"7.5%", cycle:"Early-mid · best runway"},
+      rows:[
+        {p:"2022", op:460,ou:2800, sp:490, su:1200, src:"est", sy:"+10%"},
+        {p:"2023", op:550,ou:3400, sp:570, su:1400, src:"est", sy:"+16%"},
+        {p:"2024", op:700,ou:5200, sp:740, su:2200, src:"ver", sy:"+30%"},
+        {p:"2025", op:880,ou:7800, sp:900, su:3400, src:"ver", sy:"+22%"},
+        {p:"2026 Mar YTD",op:900,ou:1800,sp:920,su:900,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:940,ou:5500,sp:960,su:2800,src:"proj",sy:"+4%"},
+        {p:"2027★", op:1040,ou:8000,sp:1060,su:4000,src:"proj",sy:"+10%"},
+        {p:"2028★", op:1160,ou:9000,sp:1180,su:5000,src:"proj",sy:"+11%"},
+        {p:"2029–30★",op:1360,ou:10000,sp:1380,su:6000,src:"proj",sy:"+17%"},
+      ]
+    },
+    th:{
+      kpi:{secPsf:1160, offPsf:1060, secYoy:"+20%", yield:"6.2%", cycle:"Early · airport upside"},
+      rows:[
+        {p:"2022", op:600,ou:800, sp:640, su:280, src:"est", sy:"+12%"},
+        {p:"2023", op:720,ou:1200,sp:760, su:380, src:"est", sy:"+19%"},
+        {p:"2024", op:880,ou:2400,sp:940, su:650, src:"ver", sy:"+24%"},
+        {p:"2025", op:1060,ou:3600,sp:1130,su:900, src:"ver", sy:"+20%"},
+        {p:"2026 Mar YTD",op:1080,ou:780,sp:1160,su:240,src:"ver",sy:"+3%"},
+        {p:"H2 2026★",op:1120,ou:2600,sp:1200,su:720,src:"proj",sy:"+3%"},
+        {p:"2027–30★",op:1380,ou:"3K/yr",sp:1460,su:"900/yr",src:"proj",sy:"+14%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:1340, offPsf:1220, secYoy:"+19%", yield:"5.8%", cycle:"Early · high runway"},
+      rows:[
+        {p:"2022", op:720,ou:400, sp:800, su:120, src:"est", sy:"+14%"},
+        {p:"2023", op:860,ou:600, sp:920, su:180, src:"est", sy:"+15%"},
+        {p:"2024", op:1040,ou:1200,sp:1100,su:320,src:"ver", sy:"+20%"},
+        {p:"2025", op:1220,ou:1800,sp:1320,su:480,src:"ver", sy:"+20%"},
+        {p:"2026 Mar YTD",op:1240,ou:380,sp:1340,su:128,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:1280,ou:1400,sp:1380,su:380,src:"proj",sy:"+3%"},
+        {p:"2027–30★",op:1600,ou:"1.5K/yr",sp:1720,su:"500/yr",src:"proj",sy:"+15%"},
+      ]
+    },
+  },
+
+  town_square:{
+    name:"Town Square",
+    apt:{
+      kpi:{secPsf:1130, offPsf:1080, secYoy:"+17%", yield:"8.1%", cycle:"Mid-cycle · best yield"},
+      rows:[
+        {p:"2022", op:620,ou:2200, sp:660, su:980, src:"ver", sy:"+12%"},
+        {p:"2023", op:740,ou:2600, sp:780, su:1100,src:"ver", sy:"+18%"},
+        {p:"2024", op:890,ou:3000, sp:940, su:1300,src:"ver", sy:"+21%"},
+        {p:"2025", op:1080,ou:3200, sp:1100,su:1450,src:"ver", sy:"+17%"},
+        {p:"2026 Mar YTD",op:1100,ou:720,sp:1130,su:380,src:"ver",sy:"+3%"},
+        {p:"H2 2026★",op:1130,ou:2400,sp:1155,su:1100,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:1280,ou:"3K/yr",sp:1300,su:"1.3K/yr",src:"proj",sy:"+8%"},
+      ]
+    },
+    th:{
+      kpi:{secPsf:1300, offPsf:1220, secYoy:"+15%", yield:"6.8%", cycle:"Mid-cycle · Hayat +4.7%"},
+      rows:[
+        {p:"2022", op:720,ou:1200, sp:780, su:340, src:"ver", sy:"+18%"},
+        {p:"2023", op:860,ou:1400, sp:920, su:390, src:"ver", sy:"+18%"},
+        {p:"2024", op:1020,ou:1600, sp:1100,su:460, src:"ver", sy:"+20%"},
+        {p:"2025", op:1220,ou:1400, sp:1280,su:520, src:"ver", sy:"+16%"},
+        {p:"2026 Mar YTD",op:1240,ou:320,sp:1300,su:138,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:1260,ou:1000,sp:1320,su:390,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:1460,ou:"1.2K/yr",sp:1500,su:"480/yr",src:"proj",sy:"+7%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:1400, offPsf:1330, secYoy:"+15%", yield:"5.9%", cycle:"Mid-cycle"},
+      rows:[
+        {p:"2022", op:780,ou:600,  sp:840, su:180, src:"ver", sy:"+20%"},
+        {p:"2023", op:940,ou:700,  sp:1010,su:210, src:"ver", sy:"+20%"},
+        {p:"2024", op:1120,ou:800, sp:1200,su:240, src:"ver", sy:"+19%"},
+        {p:"2025", op:1330,ou:720, sp:1380,su:260, src:"ver", sy:"+15%"},
+        {p:"2026 Mar YTD",op:1340,ou:160,sp:1400,su:68,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:1370,ou:540,sp:1430,su:195,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:1580,ou:"600/yr",sp:1640,su:"240/yr",src:"proj",sy:"+8%"},
+      ]
+    },
+  },
+
+  arabian_ranches:{
+    name:"Arabian Ranches 1/2/3",
+    apt:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No apartments"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+    th:{
+      kpi:{secPsf:1560, offPsf:1440, secYoy:"+14%", yield:"5.8%", cycle:"Mid-peak · Emaar brand"},
+      rows:[
+        {p:"2022", op:820,ou:1800, sp:920, su:680, src:"ver", sy:"+28%"},
+        {p:"2023", op:1000,ou:2000,sp:1100,su:760, src:"ver", sy:"+20%"},
+        {p:"2024", op:1200,ou:2200,sp:1300,su:840, src:"ver", sy:"+18%"},
+        {p:"2025", op:1440,ou:2000,sp:1560,su:900, src:"ver", sy:"+20%"},
+        {p:"2026 Mar YTD",op:1460,ou:450,sp:1580,su:235,src:"ver",sy:"+1%"},
+        {p:"H2 2026★",op:1480,ou:1500,sp:1600,su:680,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:1680,ou:"1.8K/yr",sp:1750,su:"800/yr",src:"proj",sy:"+5%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:1900, offPsf:1760, secYoy:"+17%", yield:"4.9%", cycle:"Mid-peak · strong"},
+      rows:[
+        {p:"2022", op:900,ou:1000, sp:1020,su:480, src:"ver", sy:"+30%"},
+        {p:"2023", op:1100,ou:1100,sp:1260,su:520, src:"ver", sy:"+24%"},
+        {p:"2024", op:1340,ou:1200,sp:1540,su:560, src:"ver", sy:"+22%"},
+        {p:"2025", op:1760,ou:1000,sp:1900,su:580, src:"ver", sy:"+23%"},
+        {p:"2026 Mar YTD",op:1780,ou:220,sp:1920,su:150,src:"ver",sy:"+1%"},
+        {p:"H2 2026★",op:1800,ou:780,sp:1940,su:440,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:2000,ou:"900/yr",sp:2080,su:"500/yr",src:"proj",sy:"+5%"},
+      ]
+    },
+  },
+
+  mudon:{
+    name:"Mudon / Arabella",
+    apt:{
+      kpi:{secPsf:1050, offPsf:980, secYoy:"+16%", yield:"6.3%", cycle:"Mid-cycle"},
+      rows:[
+        {p:"2022", op:580,ou:400, sp:640, su:200, src:"est", sy:"+10%"},
+        {p:"2023", op:700,ou:500, sp:760, su:240, src:"est", sy:"+19%"},
+        {p:"2024", op:840,ou:600, sp:920, su:280, src:"ver", sy:"+21%"},
+        {p:"2025", op:980,ou:650, sp:1060,su:300, src:"ver", sy:"+15%"},
+        {p:"2026 Apr YTD",op:1000,ou:140,sp:1080,su:80,src:"est",sy:"+2%"},
+        {p:"H2 2026★",op:1020,ou:500,sp:1100,su:240,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:1180,ou:"600/yr",sp:1240,su:"280/yr",src:"proj",sy:"+6%"},
+      ]
+    },
+    th:{
+      kpi:{secPsf:1580, offPsf:1480, secYoy:"+16%", yield:"5.7%", cycle:"Mid-cycle"},
+      rows:[
+        {p:"2022", op:840,ou:800, sp:940, su:320, src:"ver", sy:"+22%"},
+        {p:"2023", op:1020,ou:900,sp:1120,su:360, src:"ver", sy:"+19%"},
+        {p:"2024", op:1220,ou:1000,sp:1340,su:400,src:"ver", sy:"+20%"},
+        {p:"2025", op:1480,ou:900, sp:1580,su:420,src:"ver", sy:"+18%"},
+        {p:"2026 Mar YTD",op:1500,ou:200,sp:1600,su:110,src:"ver",sy:"+1%"},
+        {p:"H2 2026★",op:1520,ou:700,sp:1620,su:320,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:1740,ou:"800/yr",sp:1840,su:"380/yr",src:"proj",sy:"+6%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:1720, offPsf:1620, secYoy:"+15%", yield:"4.8%", cycle:"Mid-cycle"},
+      rows:[
+        {p:"2022", op:920,ou:500, sp:1020,su:220, src:"ver", sy:"+24%"},
+        {p:"2023", op:1100,ou:600,sp:1220,su:250,src:"ver", sy:"+20%"},
+        {p:"2024", op:1320,ou:680,sp:1460,su:280,src:"ver", sy:"+20%"},
+        {p:"2025", op:1620,ou:600,sp:1720,su:295,src:"ver", sy:"+18%"},
+        {p:"2026 Mar YTD",op:1640,ou:130,sp:1740,su:78,src:"ver",sy:"+1%"},
+        {p:"H2 2026★",op:1660,ou:460,sp:1760,su:225,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:1900,ou:"500/yr",sp:2000,su:"260/yr",src:"proj",sy:"+6%"},
+      ]
+    },
+  },
+
+  mbr:{
+    name:"MBR City / Sobha Hartland",
+    apt:{
+      kpi:{secPsf:2400, offPsf:2480, secYoy:"+12%", yield:"5.1%", cycle:"Mid-late · premium"},
+      rows:[
+        {p:"2022", op:1400,ou:4200,sp:1450,su:2400,src:"ver",sy:"+25%"},
+        {p:"2023", op:1720,ou:4800,sp:1780,su:2800,src:"ver",sy:"+23%"},
+        {p:"2024", op:2060,ou:5200,sp:2100,su:3100,src:"ver",sy:"+18%"},
+        {p:"2025", op:2480,ou:5000,sp:2380,su:3000,src:"ver",sy:"+13%"},
+        {p:"2026 Mar YTD",op:2500,ou:1100,sp:2400,su:780,src:"ver",sy:"+1%"},
+        {p:"H2 2026★",op:2520,ou:3800,sp:2440,su:2400,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:2750,ou:"4.5K/yr",sp:2680,su:"2.8K/yr",src:"proj",sy:"+5%"},
+      ]
+    },
+    th:{
+      kpi:{secPsf:2380, offPsf:2260, secYoy:"+14%", yield:"5.0%", cycle:"Mid-late · Sobha premium"},
+      rows:[
+        {p:"2022", op:1300,ou:1400,sp:1400,su:400,src:"ver",sy:"+30%"},
+        {p:"2023", op:1600,ou:1600,sp:1700,su:440,src:"ver",sy:"+21%"},
+        {p:"2024", op:1940,ou:1800,sp:2060,su:480,src:"ver",sy:"+21%"},
+        {p:"2025", op:2260,ou:1600,sp:2380,su:500,src:"ver",sy:"+15%"},
+        {p:"2026 Mar YTD",op:2280,ou:360,sp:2400,su:130,src:"ver",sy:"+1%"},
+        {p:"H2 2026★",op:2300,ou:1200,sp:2420,su:380,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:2580,ou:"1.3K/yr",sp:2680,su:"430/yr",src:"proj",sy:"+5%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:2860, offPsf:2720, secYoy:"+16%", yield:"4.2%", cycle:"Late-mid · ultra luxury"},
+      rows:[
+        {p:"2022", op:1560,ou:800, sp:1660,su:260,src:"ver",sy:"+28%"},
+        {p:"2023", op:1920,ou:900, sp:2020,su:290,src:"ver",sy:"+22%"},
+        {p:"2024", op:2320,ou:1000,sp:2460,su:320,src:"ver",sy:"+22%"},
+        {p:"2025", op:2720,ou:900, sp:2860,su:340,src:"ver",sy:"+16%"},
+        {p:"2026 Mar YTD",op:2740,ou:200,sp:2880,su:90,src:"ver",sy:"+1%"},
+        {p:"H2 2026★",op:2760,ou:680,sp:2900,su:260,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:3100,ou:"750/yr",sp:3240,su:"300/yr",src:"proj",sy:"+6%"},
+      ]
+    },
+  },
+
+  palm:{
+    name:"Palm Jumeirah",
+    apt:{
+      kpi:{secPsf:4900, offPsf:5200, secYoy:"+5%", yield:"4.2%", cycle:"At peak · luxury plateau"},
+      rows:[
+        {p:"2022", op:2700,ou:600, sp:2900,su:1800,src:"ver",sy:"+30%"},
+        {p:"2023", op:3400,ou:700, sp:3480,su:2000,src:"ver",sy:"+20%"},
+        {p:"2024", op:4200,ou:800, sp:4100,su:2100,src:"ver",sy:"+18%"},
+        // 2025: new premium launches (Rixos etc) priced above aging secondary — noted exception
+        {p:"2025", op:5200,ou:700, sp:4800,su:1900,src:"ver",sy:"+17%"},
+        {p:"2026 Mar YTD",op:5200,ou:150,sp:4900,su:480,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:5250,ou:500,sp:4950,su:1500,src:"proj",sy:"flat"},
+        {p:"2027–30★",op:5600,ou:"600/yr",sp:5300,su:"1.6K/yr",src:"proj",sy:"+3%"},
+      ]
+    },
+    th:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No townhouses"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+    villa:{
+      kpi:{secPsf:6700, offPsf:6200, secYoy:"+5%", yield:"3.5%", cycle:"At peak · cycle end"},
+      rows:[
+        {p:"2022", op:3500,ou:300,sp:4100,su:480,src:"ver",sy:"+35%"},
+        {p:"2023", op:4400,ou:280,sp:5000,su:500,src:"ver",sy:"+22%"},
+        {p:"2024", op:5400,ou:250,sp:5900,su:520,src:"ver",sy:"+18%"},
+        {p:"2025", op:6200,ou:220,sp:6600,su:480,src:"ver",sy:"+12%"},
+        {p:"2026 Mar YTD",op:6200,ou:48, sp:6700,su:125,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:6200,ou:180,sp:6750,su:380,src:"proj",sy:"flat"},
+        {p:"2027–30★",op:6800,ou:"200/yr",sp:7200,su:"420/yr",src:"proj",sy:"+3%"},
+      ]
+    },
+  },
+
+  dso:{
+    name:"Dubai Silicon Oasis",
+    apt:{
+      kpi:{secPsf:980, offPsf:920, secYoy:"+29%", yield:"7.8%", cycle:"Early-mid · Blue Line catalyst"},
+      rows:[
+        {p:"2022", op:440,ou:1200,sp:510,su:1800,src:"est",sy:"+8%"},
+        {p:"2023", op:520,ou:1400,sp:600,su:2000,src:"ver",sy:"+18%"},
+        {p:"2024", op:640,ou:1800,sp:740,su:2200,src:"ver",sy:"+23%"},
+        {p:"2025", op:920,ou:2400,sp:960,su:2600,src:"ver",sy:"+30%"},
+        {p:"2026 Mar YTD",op:940,ou:560,sp:980,su:680,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:960,ou:1800,sp:1000,su:2100,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:1100,ou:"2.5K/yr",sp:1150,su:"2.5K/yr",src:"proj",sy:"+10%"},
+      ]
+    },
+    th:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No townhouses"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+    villa:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No villas"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+  },
+
+  tilal:{
+    name:"Tilal Al Ghaf",
+    apt:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"Villa/TH only"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+    th:{
+      kpi:{secPsf:1700, offPsf:1580, secYoy:"+16%", yield:"5.4%", cycle:"Mid-cycle · lagoon premium"},
+      rows:[
+        {p:"2022", op:840,ou:1200,sp:960,su:280,src:"ver",sy:"+32%"},
+        {p:"2023", op:1020,ou:1400,sp:1140,su:320,src:"ver",sy:"+19%"},
+        {p:"2024", op:1240,ou:1600,sp:1400,su:360,src:"ver",sy:"+23%"},
+        {p:"2025", op:1580,ou:1400,sp:1700,su:380,src:"ver",sy:"+21%"},
+        {p:"2026 Mar YTD",op:1600,ou:320,sp:1720,su:100,src:"ver",sy:"+1%"},
+        {p:"H2 2026★",op:1620,ou:1050,sp:1740,su:290,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:1860,ou:"1.2K/yr",sp:1980,su:"340/yr",src:"proj",sy:"+6%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:2060, offPsf:1920, secYoy:"+18%", yield:"4.4%", cycle:"Mid-cycle · MAF solid"},
+      rows:[
+        {p:"2022", op:1000,ou:700,sp:1140,su:180,src:"ver",sy:"+32%"},
+        {p:"2023", op:1220,ou:800,sp:1380,su:200,src:"ver",sy:"+21%"},
+        {p:"2024", op:1480,ou:900,sp:1680,su:220,src:"ver",sy:"+22%"},
+        {p:"2025", op:1920,ou:800,sp:2060,su:235,src:"ver",sy:"+23%"},
+        {p:"2026 Mar YTD",op:1940,ou:180,sp:2080,su:62,src:"ver",sy:"+1%"},
+        {p:"H2 2026★",op:1960,ou:620,sp:2100,su:180,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:2220,ou:"700/yr",sp:2380,su:"210/yr",src:"proj",sy:"+6%"},
+      ]
+    },
+  },
+
+  damac_hills:{
+    name:"DAMAC Hills 1",
+    apt:{
+      kpi:{secPsf:1180, offPsf:1100, secYoy:"+14%", yield:"6.8%", cycle:"Mid-cycle · golf community"},
+      rows:[
+        {p:"2022",op:780,ou:1200,sp:820,su:900,src:"ver",sy:"+12%"},
+        {p:"2023",op:900,ou:1400,sp:960,su:1000,src:"ver",sy:"+17%"},
+        {p:"2024",op:1020,ou:1600,sp:1080,su:1100,src:"ver",sy:"+13%"},
+        {p:"2025",op:1100,ou:1500,sp:1180,su:1150,src:"ver",sy:"+9%"},
+        {p:"2026 Apr YTD",op:1120,ou:360,sp:1200,su:290,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:1140,ou:1100,sp:1220,su:900,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:1280,ou:"1.4K/yr",sp:1360,su:"1.1K/yr",src:"proj",sy:"+6%"},
+      ]
+    },
+    th:{
+      kpi:{secPsf:1420, offPsf:1320, secYoy:"+15%", yield:"6.2%", cycle:"Mid-cycle · Akoya-adjacent"},
+      rows:[
+        {p:"2022",op:860,ou:600,sp:920,su:280,src:"ver",sy:"+16%"},
+        {p:"2023",op:1000,ou:700,sp:1080,su:310,src:"ver",sy:"+17%"},
+        {p:"2024",op:1180,ou:800,sp:1260,su:340,src:"ver",sy:"+17%"},
+        {p:"2025",op:1320,ou:720,sp:1420,su:360,src:"ver",sy:"+13%"},
+        {p:"2026 Apr YTD",op:1340,ou:165,sp:1450,su:90,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:1360,ou:540,sp:1470,su:275,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:1560,ou:"650/yr",sp:1660,su:"320/yr",src:"proj",sy:"+6%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:1680, offPsf:1540, secYoy:"+16%", yield:"5.5%", cycle:"Mid-cycle · golf views premium"},
+      rows:[
+        {p:"2022",op:920,ou:400,sp:1020,su:180,src:"ver",sy:"+20%"},
+        {p:"2023",op:1100,ou:450,sp:1220,su:200,src:"ver",sy:"+20%"},
+        {p:"2024",op:1320,ou:500,sp:1460,su:220,src:"ver",sy:"+20%"},
+        {p:"2025",op:1540,ou:440,sp:1680,su:235,src:"ver",sy:"+15%"},
+        {p:"2026 Apr YTD",op:1560,ou:100,sp:1710,su:60,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:1580,ou:340,sp:1730,su:175,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:1820,ou:"400/yr",sp:1940,su:"210/yr",src:"proj",sy:"+6%"},
+      ]
+    },
+  },
+
+  damac_hills2:{
+    name:"DAMAC Hills 2 (Akoya)",
+    apt:{
+      kpi:{secPsf:820, offPsf:760, secYoy:"+23%", yield:"8.5%", cycle:"Early-mid · best yield"},
+      rows:[
+        {p:"2022",op:420,ou:1800,sp:460,su:1200,src:"est",sy:"+10%"},
+        {p:"2023",op:520,ou:2200,sp:560,su:1400,src:"ver",sy:"+22%"},
+        {p:"2024",op:640,ou:2800,sp:680,su:1600,src:"ver",sy:"+21%"},
+        {p:"2025",op:760,ou:3000,sp:820,su:1800,src:"ver",sy:"+21%"},
+        {p:"2026 Apr YTD",op:780,ou:720,sp:850,su:460,src:"ver",sy:"+4%"},
+        {p:"H2 2026★",op:800,ou:2200,sp:870,su:1400,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:940,ou:"3K/yr",sp:1020,su:"1.8K/yr",src:"proj",sy:"+10%"},
+      ]
+    },
+    th:{
+      kpi:{secPsf:1020, offPsf:940, secYoy:"+28%", yield:"7.2%", cycle:"Early · best affordable TH"},
+      rows:[
+        {p:"2022",op:480,ou:1200,sp:540,su:480,src:"est",sy:"+15%"},
+        {p:"2023",op:600,ou:1600,sp:660,su:560,src:"ver",sy:"+22%"},
+        {p:"2024",op:740,ou:2000,sp:800,su:640,src:"ver",sy:"+21%"},
+        {p:"2025",op:940,ou:2200,sp:1020,su:720,src:"ver",sy:"+28%"},
+        {p:"2026 Apr YTD",op:960,ou:520,sp:1050,su:185,src:"ver",sy:"+3%"},
+        {p:"H2 2026★",op:980,ou:1600,sp:1080,su:560,src:"proj",sy:"+3%"},
+        {p:"2027–30★",op:1160,ou:"2K/yr",sp:1260,su:"700/yr",src:"proj",sy:"+10%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:1140, offPsf:1040, secYoy:"+23%", yield:"6.2%", cycle:"Early-mid · Dubai's most affordable villa"},
+      rows:[
+        {p:"2022",op:560,ou:700,sp:620,su:280,src:"est",sy:"+12%"},
+        {p:"2023",op:680,ou:900,sp:760,su:320,src:"ver",sy:"+23%"},
+        {p:"2024",op:840,ou:1100,sp:940,su:360,src:"ver",sy:"+24%"},
+        {p:"2025",op:1040,ou:1200,sp:1140,su:400,src:"ver",sy:"+21%"},
+        {p:"2026 Apr YTD",op:1060,ou:280,sp:1170,su:102,src:"ver",sy:"+3%"},
+        {p:"H2 2026★",op:1080,ou:900,sp:1190,su:310,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:1280,ou:"1.1K/yr",sp:1400,su:"390/yr",src:"proj",sy:"+10%"},
+      ]
+    },
+  },
+
+  sports_city:{
+    name:"Dubai Sports City",
+    apt:{
+      kpi:{secPsf:980, offPsf:1020, secYoy:"+22%", yield:"8.0%", cycle:"Early-mid · value play"},
+      rows:[
+        {p:"2022",op:520,ou:800,sp:580,su:1200,src:"est",sy:"+10%"},
+        {p:"2023",op:620,ou:900,sp:680,su:1300,src:"ver",sy:"+17%"},
+        {p:"2024",op:780,ou:1100,sp:840,su:1400,src:"ver",sy:"+24%"},
+        {p:"2025",op:1020,ou:1400,sp:1060,su:1500,src:"ver",sy:"+26%"},
+        {p:"2026 Apr YTD",op:1040,ou:340,sp:1080,su:380,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:1060,ou:1050,sp:1100,su:1150,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:1220,ou:"1.3K/yr",sp:1280,su:"1.5K/yr",src:"proj",sy:"+8%"},
+      ]
+    },
+    th:{
+      kpi:{secPsf:1180, offPsf:null, secYoy:"+20%", yield:"6.5%", cycle:"Mid · limited TH supply"},
+      rows:[
+        {p:"2022",op:null,ou:"n/a",sp:640,su:120,src:"est",sy:"+10%"},
+        {p:"2023",op:null,ou:"n/a",sp:760,su:140,src:"ver",sy:"+19%"},
+        {p:"2024",op:null,ou:"n/a",sp:920,su:160,src:"ver",sy:"+21%"},
+        {p:"2025",op:null,ou:"n/a",sp:1100,su:175,src:"ver",sy:"+20%"},
+        {p:"2026 Apr YTD",op:null,ou:"n/a",sp:1130,su:45,src:"ver",sy:"+3%"},
+        {p:"H2 2026★",op:null,ou:"n/a",sp:1160,su:132,src:"proj",sy:"+3%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:1360, offPsf:null, secYoy:"+22%", yield:"5.8%", cycle:"Mid · Victory Heights premium"},
+      rows:[
+        {p:"2022",op:null,ou:"n/a",sp:740,su:85,src:"est",sy:"+14%"},
+        {p:"2023",op:null,ou:"n/a",sp:880,su:95,src:"ver",sy:"+19%"},
+        {p:"2024",op:null,ou:"n/a",sp:1060,su:108,src:"ver",sy:"+20%"},
+        {p:"2025",op:null,ou:"n/a",sp:1280,su:115,src:"ver",sy:"+21%"},
+        {p:"2026 Apr YTD",op:null,ou:"n/a",sp:1310,su:30,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:null,ou:"n/a",sp:1340,su:88,src:"proj",sy:"+2%"},
+      ]
+    },
+  },
+
+  jvt:{
+    name:"Jumeirah Village Triangle (JVT)",
+    apt:{
+      kpi:{secPsf:1180, offPsf:1240, secYoy:"+28%", yield:"7.8%", cycle:"Mid · outperforming JVC"},
+      rows:[
+        {p:"2022",op:620,ou:600,sp:660,su:800,src:"est",sy:"+12%"},
+        {p:"2023",op:740,ou:700,sp:800,su:900,src:"ver",sy:"+21%"},
+        {p:"2024",op:920,ou:900,sp:980,su:1000,src:"ver",sy:"+23%"},
+        {p:"2025",op:1240,ou:1200,sp:1300,su:1100,src:"ver",sy:"+33%"},
+        {p:"2026 Apr YTD",op:1260,ou:290,sp:1340,su:280,src:"ver",sy:"+3%"},
+        {p:"H2 2026★",op:1280,ou:900,sp:1360,su:850,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:1440,ou:"1.1K/yr",sp:1520,su:"1K/yr",src:"proj",sy:"+7%"},
+      ]
+    },
+    th:{
+      kpi:{secPsf:1380, offPsf:null, secYoy:"+22%", yield:"6.5%", cycle:"Mid · limited supply"},
+      rows:[
+        {p:"2022",op:null,ou:"n/a",sp:760,su:180,src:"est",sy:"+14%"},
+        {p:"2023",op:null,ou:"n/a",sp:920,su:200,src:"ver",sy:"+21%"},
+        {p:"2024",op:null,ou:"n/a",sp:1100,su:220,src:"ver",sy:"+20%"},
+        {p:"2025",op:null,ou:"n/a",sp:1300,su:240,src:"ver",sy:"+18%"},
+        {p:"2026 Apr YTD",op:null,ou:"n/a",sp:1340,su:62,src:"ver",sy:"+3%"},
+        {p:"H2 2026★",op:null,ou:"n/a",sp:1370,su:185,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:null,ou:"n/a",sp:1560,su:"210/yr",src:"proj",sy:"+7%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:1560, offPsf:null, secYoy:"+20%", yield:"5.8%", cycle:"Mid-peak · supply constrained"},
+      rows:[
+        {p:"2022",op:null,ou:"n/a",sp:880,su:80,src:"est",sy:"+14%"},
+        {p:"2023",op:null,ou:"n/a",sp:1060,su:90,src:"ver",sy:"+20%"},
+        {p:"2024",op:null,ou:"n/a",sp:1260,su:100,src:"ver",sy:"+19%"},
+        {p:"2025",op:null,ou:"n/a",sp:1500,su:110,src:"ver",sy:"+19%"},
+        {p:"2026 Apr YTD",op:null,ou:"n/a",sp:1540,su:28,src:"ver",sy:"+3%"},
+        {p:"H2 2026★",op:null,ou:"n/a",sp:1580,su:84,src:"proj",sy:"+3%"},
+      ]
+    },
+  },
+
+  damac_lagoons:{
+    name:"DAMAC Lagoons",
+    apt:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"Villa/TH only"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+    th:{
+      kpi:{secPsf:1520, offPsf:1340, secYoy:"+26%", yield:"6.8%", cycle:"Early-mid · crystal lagoon lifestyle"},
+      rows:[
+        {p:"Launch 2022",op:900,ou:2400,sp:null,su:0,src:"ver",sy:"n/a"},
+        {p:"2023",op:null,ou:null,sp:1080,su:180,src:"ver",sy:"+20%"},
+        {p:"2024",op:null,ou:null,sp:1280,su:240,src:"ver",sy:"+19%"},
+        {p:"2025 delivered ph1",op:null,ou:null,sp:1520,su:310,src:"ver",sy:"+19%"},
+        {p:"2026 Apr YTD",op:null,ou:null,sp:1570,su:82,src:"ver",sy:"+3%"},
+        {p:"H2 2026★",op:null,ou:null,sp:1610,su:240,src:"proj",sy:"+3%"},
+        {p:"2027–30★",op:1680,ou:"2.5K/yr",sp:1820,su:"320/yr",src:"proj",sy:"+8%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:1820, offPsf:1620, secYoy:"+24%", yield:"5.8%", cycle:"Early-mid · lagoon front"},
+      rows:[
+        {p:"Launch 2022",op:1080,ou:1200,sp:null,su:0,src:"ver",sy:"n/a"},
+        {p:"2023",op:null,ou:null,sp:1280,su:110,src:"ver",sy:"+19%"},
+        {p:"2024",op:null,ou:null,sp:1520,su:145,src:"ver",sy:"+19%"},
+        {p:"2025 delivered",op:null,ou:null,sp:1820,su:185,src:"ver",sy:"+20%"},
+        {p:"2026 Apr YTD",op:null,ou:null,sp:1880,su:48,src:"ver",sy:"+3%"},
+        {p:"H2 2026★",op:null,ou:null,sp:1920,su:140,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:1900,ou:"1.2K/yr",sp:2180,su:"190/yr",src:"proj",sy:"+8%"},
+      ]
+    },
+  },
+
+  creek_harbour:{
+    name:"Dubai Creek Harbour",
+    apt:{
+      kpi:{secPsf:2480, offPsf:2560, secYoy:"+16%", yield:"5.2%", cycle:"Mid-late · Emaar waterfront"},
+      rows:[
+        {p:"2022",op:1400,ou:2200,sp:1460,su:1800,src:"ver",sy:"+22%"},
+        {p:"2023",op:1680,ou:2600,sp:1740,su:2000,src:"ver",sy:"+19%"},
+        {p:"2024",op:2080,ou:3000,sp:2140,su:2200,src:"ver",sy:"+23%"},
+        {p:"2025",op:2560,ou:2800,sp:2480,su:2100,src:"ver",sy:"+16%"},
+        {p:"2026 Apr YTD",op:2580,ou:620,sp:2520,su:540,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:2600,ou:2000,sp:2560,su:1700,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:2850,ou:"2.5K/yr",sp:2780,su:"2K/yr",src:"proj",sy:"+5%"},
+      ]
+    },
+    th:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No townhouses"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+    villa:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No villas"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+  },
+
+  arjan:{
+    name:"Arjan / Dubai Science Park",
+    apt:{
+      kpi:{secPsf:1340, offPsf:1420, secYoy:"+29%", yield:"8.2%", cycle:"Early-mid · Blue Line + yield"},
+      rows:[
+        {p:"2022",op:680,ou:900,sp:740,su:1200,src:"est",sy:"+12%"},
+        {p:"2023",op:820,ou:1100,sp:880,su:1400,src:"ver",sy:"+19%"},
+        {p:"2024",op:1020,ou:1400,sp:1080,su:1600,src:"ver",sy:"+23%"},
+        {p:"2025",op:1420,ou:1800,sp:1480,su:1800,src:"ver",sy:"+37%"},
+        {p:"2026 Apr YTD",op:1440,ou:440,sp:1500,su:460,src:"ver",sy:"+1%"},
+        {p:"H2 2026★",op:1460,ou:1350,sp:1530,su:1400,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:1620,ou:"2K/yr",sp:1720,su:"1.8K/yr",src:"proj",sy:"+8%"},
+      ]
+    },
+    th:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No townhouses"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+    villa:{ kpi:{secPsf:null,offPsf:null,secYoy:"N/A",yield:"N/A",cycle:"No villas"},
+      rows:[{p:"—",op:null,ou:"n/a",sp:null,su:"n/a",src:"est",sy:"—"}] },
+  },
+
+  al_furjan:{
+    name:"Al Furjan",
+    apt:{
+      kpi:{secPsf:1320, offPsf:1280, secYoy:"+18%", yield:"7.5%", cycle:"Mid · metro connected"},
+      rows:[
+        {p:"2022",op:720,ou:700,sp:780,su:800,src:"est",sy:"+12%"},
+        {p:"2023",op:860,ou:800,sp:920,su:900,src:"ver",sy:"+18%"},
+        {p:"2024",op:1040,ou:1000,sp:1120,su:1000,src:"ver",sy:"+22%"},
+        {p:"2025",op:1280,ou:1100,sp:1320,su:1050,src:"ver",sy:"+18%"},
+        {p:"2026 Apr YTD",op:1300,ou:265,sp:1350,su:265,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:1320,ou:830,sp:1380,su:810,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:1500,ou:"1.2K/yr",sp:1580,su:"1.1K/yr",src:"proj",sy:"+7%"},
+      ]
+    },
+    th:{
+      kpi:{secPsf:1580, offPsf:1480, secYoy:"+17%", yield:"6.4%", cycle:"Mid · Murooj Al Furjan hot"},
+      rows:[
+        {p:"2022",op:860,ou:500,sp:960,su:240,src:"ver",sy:"+16%"},
+        {p:"2023",op:1020,ou:580,sp:1120,su:270,src:"ver",sy:"+17%"},
+        {p:"2024",op:1240,ou:660,sp:1360,su:295,src:"ver",sy:"+21%"},
+        {p:"2025",op:1480,ou:600,sp:1580,su:315,src:"ver",sy:"+16%"},
+        {p:"2026 Apr YTD",op:1500,ou:138,sp:1610,su:80,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:1520,ou:460,sp:1640,su:240,src:"proj",sy:"+2%"},
+        {p:"2027–30★",op:1740,ou:"580/yr",sp:1860,su:"285/yr",src:"proj",sy:"+7%"},
+      ]
+    },
+    villa:{
+      kpi:{secPsf:1820, offPsf:1700, secYoy:"+18%", yield:"5.5%", cycle:"Mid · Bliss/Murooj"},
+      rows:[
+        {p:"2022",op:960,ou:300,sp:1060,su:140,src:"ver",sy:"+18%"},
+        {p:"2023",op:1140,ou:340,sp:1260,su:155,src:"ver",sy:"+19%"},
+        {p:"2024",op:1380,ou:380,sp:1520,su:170,src:"ver",sy:"+21%"},
+        {p:"2025",op:1700,ou:340,sp:1820,su:182,src:"ver",sy:"+20%"},
+        {p:"2026 Apr YTD",op:1720,ou:78,sp:1860,su:46,src:"ver",sy:"+2%"},
+        {p:"H2 2026★",op:1740,ou:260,sp:1880,su:138,src:"proj",sy:"+1%"},
+        {p:"2027–30★",op:1980,ou:"310/yr",sp:2120,su:"165/yr",src:"proj",sy:"+6%"},
+      ]
+    },
+  },
+};
+
+const GUIDANCE = [
+  {r:"JVC",sig:"mid",lbl:"Mid-cycle · growing",body:"Most liquid mid-market. 17% secondary growth in 2025, now moderating to 2–6%. Blue Line proximity and family demand sustain upside. Off-plan units still launching at a clear 5–8% discount to secondary — investment thesis intact.",tags:["High liquidity","Yield 7%+","Metro access","Family demand"]},
+  {r:"Downtown / Marina",sig:"peak",lbl:"Late cycle · plateau",body:"Secondary PSF growth slowed to 2–5% early 2026. Volume down. Premium new launches (Rixos, St Regis) can trade above older secondary stock — this is not a signal to invest; it's developer brand extraction. Geopolitical headwinds hit luxury first.",tags:["Global HNW","Price plateau","Yield sub-5%","Selective launches"]},
+  {r:"Business Bay",sig:"mid",lbl:"Maturing · moderate",body:"Off-plan and secondary converging (< 5% gap in 2025). Solid income play at 5–6% yield but capital appreciation slowing. New supply 2026–27 will compete with secondary. Best for rental income not appreciation.",tags:["Canal views","Yield 5–6%","Supply rising","Moderate growth"]},
+  {r:"Dubai Hills",sig:"mid",lbl:"Mid-cycle · quality",body:"Secondary TH/villa prices nudge slightly above new off-plan launches (delivered premium). Emaar brand commands re-sale premium over new stock. Infrastructure complete. 6–8% annual appreciation is sustainable for 3–5 more years.",tags:["Emaar brand","Schools/mall","Sustainable 6–8%","End-user driven"]},
+  {r:"Dubai South",sig:"early",lbl:"Early cycle · strongest runway",body:"Off-plan launched at clear 10–15% discount to secondary — exactly the right investment setup. Airport ($35B) + Metro Blue Line (2029) + Etihad Rail. Prices +25% since announcement but still 60% below prime. 7–10yr hold is the play. NOT a commuter community yet.",tags:["Al Maktoum Airport","Metro 2029","60% below prime","7–10yr thesis"]},
+  {r:"Town Square",sig:"mid",lbl:"Mid-cycle · best yield",body:"Highest yield in mid-market (8%+ apartments). Off-plan launches 5–10% below secondary — healthy gap. Nshama phased launches absorbing demand carefully. Hayat TH sub strong. School + park infrastructure maturing. 7–9% annual growth realistic.",tags:["Yield 8%+ apt","Nshama quality","Schools operational","Al Qudra road"]},
+  {r:"Arabian Ranches",sig:"mid",lbl:"Mid-peak · Emaar brand",body:"Off-plan launches 8–10% below secondary for TH/villas. Secondary villa +23% in 2025 — strong but now moderating. AR3 new deliveries elevating the index. 5–7% annual growth forward. Well-supported by brand and families, not speculation.",tags:["Emaar brand","AR3 deliveries","Yield 5–6%","Family demand"]},
+  {r:"Mudon / Arabella",sig:"mid",lbl:"Mid-cycle · family value",body:"Off-plan consistently 6–9% below secondary — solid investment gap. Dubai Properties developer track record solid. Al Ranim Phase 3+ launching 2027. Less premium than Emaar but reliable 6–8% appreciation. Good for both yield and growth.",tags:["Dubai Properties","6–9% off-plan discount","Family community","Yield 5–7%"]},
+  {r:"MBR City",sig:"lat",lbl:"Mid-late · premium brand",body:"Off-plan (Sobha Hartland, Emaar) 5–8% below secondary. Secondary appreciation moderating to 5–8% from 15%+ in 2022–23. Geopolitical headwind hits premium international buyer first. Still quality asset, but near-cycle-end pricing.",tags:["Sobha/Emaar","Moderate from 15%","Luxury tenant","Yield 4.5–5%"]},
+  {r:"Palm Jumeirah",sig:"peak",lbl:"At peak · +1.7% YoY H1 2025",body:"Secondary villa at AED 6,600–7,000 PSF is pricing out all but trophy buyers. Off-plan NEW launches (Rixos, Six Senses) above secondary of older stock — this is brand premium, not market health. YoY growth slowed to near zero for existing villas.",tags:["Trophy asset","Price plateau","Yield 3.5–4%","Scarcity permanent"]},
+  {r:"DSO",sig:"early",lbl:"Early-mid · Blue Line play",body:"Best value play in established Dubai. Secondary +29% in 2025 after Blue Line announcement — largest appreciation of any area. Off-plan at slight discount to secondary. 2029 metro arrival will structurally re-rate. Affordable entry, strong yields.",tags:["Metro Blue Line 2029","PSF +29% in 2025","Yield 7.5–8%","Cheapest in central Dubai"]},
+  {r:"Tilal Al Ghaf",sig:"mid",lbl:"Mid-cycle · lagoon premium",body:"Off-plan 7–8% below secondary — investment thesis works. MAF developer with strong delivery track record. Crystal Lagoon anchor is a genuine lifestyle differentiator. Full retail/school infrastructure arrives 2026–27. 6–8% annually.",tags:["MAF developer","Crystal Lagoon","Infrastructure 2027","Yield 4.5–5.5%"]},
+  {r:"JLT",sig:"mid",lbl:"Mid-cycle · metro value",body:"Red Line metro access makes this a consistent rental performer. Off-plan at clear discount to secondary. Rising prices as Dubai Marina spillover continues. 10–12% annual growth in 2025 now moderating to 4–6%.",tags:["Red Line metro","Marina lifestyle","Yield 6–7%","Moderate growth"]},
+];
+
+// Pipeline
+const PIPELINE = [
+  {r:"JVC",p:"Binghatti Ghost/Phantom (Binghatti)",t:"apt",u:480,psf:1380,h:"Q4 2026",n:"Branded launch · aggressive pricing"},
+  {r:"JVC",p:"Multiple boutique towers 2027–28",t:"apt",u:"5K+/yr",psf:1500,h:"2027–28",n:"Continued high-volume area"},
+  {r:"Downtown",p:"St Regis Residences (Emaar)",t:"apt",u:220,psf:4500,h:"Q3 2027",n:"Ultra-luxury branded"},
+  {r:"Downtown",p:"The Edge by Select Group",t:"apt",u:340,psf:3800,h:"2028",n:"Canal views · premium pricing"},
+  {r:"Dubai Hills",p:"Park Lane (Emaar)",t:"apt",u:600,psf:2320,h:"Q2 2027",n:"Golf course views · high demand"},
+  {r:"Dubai Hills",p:"Maple 4 (Emaar)",t:"th",u:380,psf:1960,h:"2027",n:"Emaar TH — will launch above current secondary"},
+  {r:"Dubai South",p:"Emaar South Greenway Phase 2",t:"th",u:650,psf:1100,h:"Q2 2028",n:"Still at discount to secondary · good entry"},
+  {r:"Dubai South",p:"South Bay Phase 5+",t:"villa",u:800,psf:1300,h:"2028–29",n:"Airport corridor · rising PSF"},
+  {r:"Dubai South",p:"AZIZI Venice Phase 3 (Azizi)",t:"apt",u:2400,psf:950,h:"2026–27",n:"Budget entry · airport workers"},
+  {r:"Dubai South",p:"Golf Edge (Emaar)",t:"apt",u:900,psf:1120,h:"Q1 2029",n:"Near Metro Blue Line station"},
+  {r:"Town Square",p:"Nshama Camden Phase 2+",t:"apt",u:1800,psf:1120,h:"2026–27",n:"Consistent Nshama quality"},
+  {r:"Town Square",p:"Sama/Naseem TH (new phases)",t:"th",u:600,psf:1280,h:"2027",n:"Off-plan discount vs secondary"},
+  {r:"Arabian Ranches",p:"Anya 2 (Emaar)",t:"th",u:700,psf:1480,h:"2027",n:"Emaar brand · strong demand"},
+  {r:"Arabian Ranches",p:"Ruba Extension",t:"villa",u:500,psf:1820,h:"2028",n:"Secondary premium likely 10–15% above"},
+  {r:"Mudon",p:"Al Ranim Phase 3–5 (Dubai Properties)",t:"th",u:1200,psf:1540,h:"2027–28",n:"Consistent delivery track record"},
+  {r:"MBR City",p:"Sobha Hartland II Phase 3+",t:"apt",u:2000,psf:2520,h:"2027–28",n:"Sobha premium · brand buyers"},
+  {r:"Palm / Palm JA",p:"Rixos Residences (Nakheel)",t:"apt",u:380,psf:6000,h:"2027",n:"Trophy · targets global HNW"},
+  {r:"Palm / Palm JA",p:"Bay Villas Palm Jebel Ali",t:"villa",u:1200,psf:2700,h:"2027–28",n:"New master development · long hold"},
+  {r:"DSO corridor",p:"Blue Line station launches",t:"apt",u:"6K+/yr",psf:1100,h:"2027–29",n:"Expect PSF surge near stations post-2029"},
+  {r:"Tilal Al Ghaf",p:"Alaya Beach Phase 3 (MAF)",t:"villa",u:450,psf:2020,h:"2027",n:"Lagoon front · MAF track record solid"},
+  {r:"JLT",p:"New Bridge Hill & boutique launches",t:"apt",u:1200,psf:1650,h:"2027–28",n:"Marina spillover · metro premium"},
+];
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+
+let psfChart, volChart;
+
+
+// ─── DLD ALL-TRANSACTION PSF (DXBAnalytics / DLD Jan 2026, all transaction types) ─────────────
+// Source: dxbanalytics.com/blog/dubai-property-price-index-2026 — Jan 2026 verified DLD data
+// These include both off-plan and ready, so they run 8–15% above ready-only secondary PSF.
+// DLD area names in brackets for cross-reference on DXBInteract / DXBAnalytics.
+const DLD_PSF = {
+  jvc:             { psf: 1473, area: "Al Barsha South Fourth",    url: "al-barsha-south-fourth",  note: "Jan 2026 DLD" },
+  downtown:        { psf: 2996, area: "Burj Khalifa / Downtown",   url: "burj-khalifa",            note: "Jan 2026 DLD" },
+  business_bay:    { psf: 2901, area: "Business Bay",              url: "business-bay",            note: "Jan 2026 DLD — heavily skewed by Binghatti Skyrise off-plan (AED 2,577–2,660)" },
+  marina:          { psf: 2625, area: "Marsa Dubai",               url: "marsa-dubai",             note: "Jan 2026 DLD" },
+  jlt:             { psf: 1900, area: "Jabal Ali First (approx)",  url: "jabal-ali-first",         note: "2025 est — JLT mapped to Jabal Ali area code" },
+  dubai_hills:     { psf: 2288, area: "Wadi Al Safa 5 (DH area)", url: "wadi-al-safa-5",          note: "2025 DLD — Emaar DH launches like Rosehill/Parkwood at AED 2,288–2,565" },
+  dubai_south:     { psf: 1415, area: "Madinat Al Mataar",        url: "madinat-al-mataar",       note: "Jan 2026 DLD — includes all off-plan; ready-only is ~AED 920–1,050" },
+  town_square:     { psf: 1401, area: "Al Yelayiss 2",            url: "al-yelayiss-2",           note: "2025 DLD avg = AED 1,401 (+21.6% YoY); Jan 2026 = AED 1,808 (off-plan skewed). Ready-only ~AED 1,250" },
+  arabian_ranches: { psf: 1789, area: "Al Hebiah Second (approx).",url: "al-hebiah-second",        note: "2025 DLD +35.2% YoY; AR3 off-plan mix skews this higher" },
+  mudon:           { psf: 1600, area: "Al Hebiah Fourth (approx)", url: "al-hebiah-fourth",        note: "2025 est; Mudon within this DLD zone" },
+  mbr:             { psf: 2583, area: "Bukadra / MBR area",        url: "bukadra",                 note: "Jan 2026 DLD; Sobha Hartland cluster" },
+  palm:            { psf: 3981, area: "Palm Jumeirah",             url: "palm-jumeirah",           note: "Jan 2026 DLD" },
+  dso:             { psf: 1257, area: "Nadd Hessa (DSO zone)",     url: "nadd-hessa",              note: "Jan 2026 DLD +50.8% YoY — Blue Line effect" },
+  tilal:           { psf: 1808, area: "Al Yelayiss 1 (Tilal)",    url: "al-yelayiss-1",           note: "Jan 2026 DLD = AED 1,808 (1,074 transactions)" },
+  damac_hills:     { psf: 1420, area: "Al Hebiah Third (DAMAC H1)",url: "al-hebiah-third",          note: "2025 est — DAMAC Hills 1 mapped to this DLD zone" },
+  damac_hills2:    { psf: 974,  area: "Madinat Hind 4 (DH2 zone)", url: "madinat-hind-4",           note: "Jan 2026 DLD = AED 974 (147 transactions)" },
+  sports_city:     { psf: 1100, area: "Al Hebiah Fifth (approx)",  url: "al-hebiah-fifth",          note: "2025 est — Sports City DLD zone" },
+  jvt:             { psf: 1309, area: "Wadi Al Safa 2",            url: "wadi-al-safa-2",           note: "Jan 2026 DLD = AED 1,309 (214 transactions)" },
+  damac_lagoons:   { psf: 1600, area: "Al Hebiah Sixth (approx)",  url: "al-hebiah-sixth",          note: "2025 est — DAMAC Lagoons zone; high off-plan premium" },
+  creek_harbour:   { psf: 2624, area: "Al Khairan First",          url: "al-khairan-first",         note: "Jan 2026 DLD = AED 2,624 (609 transactions)" },
+  arjan:           { psf: 1661, area: "Dubai Science Park cluster", url: "nadd-hessa",               note: "2025 Hillviews/Science Park = AED 1,661; Arjan similar" },
+  al_furjan:       { psf: 1460, area: "Al Furjan (est)",           url: "al-furjan",                note: "2025 est — Al Furjan mid-range community" },
+};
+
+// ─── CAGR helper ─────────────────────────────────────────────────────────────
+// Finds the earliest row with a valid off-plan launch price and a year we can parse,
+// then computes CAGR to the most recent secondary PSF.
+function computeCAGR(rows){
+  // Find launch row (first row with op price and parseable year)
+  let launchPsf = null, launchYear = null;
+  for(const r of rows){
+    if(!r.op) continue;
+    const yr = parseInt(r.p.match(/\d{4}/)?.[0]);
+    if(yr && yr >= 2014 && yr <= 2026){ launchPsf = r.op; launchYear = yr; break; }
+  }
+  // Find most recent verified/estimated secondary PSF (not projected)
+  let currentPsf = null, currentYear = 2026;
+  for(let i = rows.length-1; i >= 0; i--){
+    const r = rows[i];
+    if(r.sp && r.src !== "proj"){
+      const yr = parseInt(r.p.match(/\d{4}/)?.[0]);
+      if(yr) currentYear = yr;
+      currentPsf = r.sp;
+      break;
+    }
+  }
+  if(!launchPsf || !currentPsf || launchYear === currentYear) return null;
+  const years = currentYear - launchYear;
+  if(years <= 0) return null;
+  const cagr = (Math.pow(currentPsf / launchPsf, 1/years) - 1) * 100;
+  return { cagr: cagr.toFixed(1), years, launchPsf, launchYear, currentPsf, currentYear };
+}
+
+function renderKPI({kpi, area, type, regionKey}){
+  const typeLabel = {apt:"Apartment",th:"Townhouse",villa:"Villa"}[type];
+  const spf      = kpi.secPsf ? "AED "+kpi.secPsf.toLocaleString() : "N/A";
+  const opf      = kpi.offPsf ? "AED "+kpi.offPsf.toLocaleString() : "N/A";
+  const dldData  = DLD_PSF[regionKey];
+  const dldPsf   = dldData ? "AED "+dldData.psf.toLocaleString() : "—";
+  const dldNote  = dldData ? dldData.area : "";
+  const gap = (kpi.secPsf && kpi.offPsf) ? ((kpi.offPsf/kpi.secPsf - 1)*100).toFixed(0) : null;
+  const gapStr = gap !== null
+    ? (gap < 0
+        ? `<span class="kup">${gap}% off-plan discount ✓</span>`
+        : `<span class="kamb">+${gap}% off-plan premium</span>`)
+    : "<span class='na'>—</span>";
+  // variance between our ready-only and DLD all-txn
+  const varPct = (kpi.secPsf && dldData)
+    ? ((dldData.psf / kpi.secPsf - 1)*100).toFixed(0)
+    : null;
+  const varStr = varPct !== null
+    ? `<span style="color:var(--amber);font-size:10px">DLD all-txn ${varPct > 0 ? '+'+varPct : varPct}% vs ready-only</span>`
+    : '';
+
+  document.getElementById("kpi_row").innerHTML = `
+    <div class="kpi" style="border-left:3px solid var(--green)">
+      <div class="kpi-label">Secondary PSF <span style="font-weight:400;text-transform:none">(ready-only)</span></div>
+      <div class="kpi-val">${spf}</div>
+      <div class="kpi-sub">${area.name} · ${typeLabel} · Bayut/PF avg</div>
+    </div>
+    <div class="kpi" style="border-left:3px solid var(--amber)">
+      <div class="kpi-label">DLD all-txn PSF <span style="font-weight:400;text-transform:none">(off-plan + ready)</span></div>
+      <div class="kpi-val">${dldPsf}</div>
+      <div class="kpi-sub">${dldNote} · dxbanalytics.com · ${varStr}</div>
+    </div>
+    <div class="kpi" style="border-left:3px solid var(--blue)">
+      <div class="kpi-label">Off-plan avg launch PSF</div>
+      <div class="kpi-val">${opf}</div>
+      <div class="kpi-sub">${gapStr}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Secondary YoY (2025)</div>
+      <div class="kpi-val kup">${kpi.secYoy || "—"}</div>
+      <div class="kpi-sub">DLD / Bayut 2025</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Yield est.</div>
+      <div class="kpi-val kup">${kpi.yield || "—"}</div>
+      <div class="kpi-sub">${kpi.cycle || "—"}</div>
+    </div>`;
+}
+
+function renderTable(rows, regionKey){
+  const dldData = DLD_PSF[regionKey] || null;
+  const cagrData = computeCAGR(rows);
+  document.getElementById("tbl_body").innerHTML = rows.map((r, idx) => {
+    const gap = (r.op && r.sp) ? ((r.op/r.sp-1)*100).toFixed(0) : null;
+    const gapTxt = gap !== null
+      ? (parseFloat(gap) < 0
+          ? `<span class="positive">${gap}%</span>`
+          : `<span class="negative">+${gap}%</span>`)
+      : '<span class="na">—</span>';
+
+    // DLD badge: show estimated all-txn PSF (ready PSF × 1.12) with tooltip
+    const dldEst = r.sp ? Math.round(r.sp * 1.12) : null;
+    const dldBadge = dldEst
+      ? `<span class="dld-badge" title="DLD all-txn est. (incl. off-plan): ~AED ${dldEst.toLocaleString()} · Verified Jan 2026 DLD area avg: ${dldData ? 'AED '+dldData.psf.toLocaleString()+' ('+dldData.area+')' : 'see dxbanalytics.com'}">DLD ~${dldEst.toLocaleString()}</span>`
+      : '';
+
+    // CAGR: show on launch row and most recent verified row
+    let cagrTxt = '<span class="na">—</span>';
+    if(cagrData){
+      if(idx === 0 && r.op){
+        cagrTxt = `<span class="cagr-pill">${cagrData.cagr}%pa</span><span style="font-size:8.5px;color:var(--muted)"> ${cagrData.years}yr</span>`;
+      } else if(r.src !== "proj" && r.sp === cagrData.currentPsf){
+        cagrTxt = `<span class="cagr-pill">${cagrData.cagr}%pa</span><span style="font-size:8.5px;color:var(--muted)"> from ${cagrData.launchYear}</span>`;
+      }
+    }
+
+    const interpTitle = r.op && r.sp
+      ? (parseFloat(gap) < 0 ? "Off-plan at discount to ready — investment thesis valid" : parseFloat(gap) > 8 ? "New launch priced above older secondary (luxury/brand premium)" : "Parity — market converging")
+      : (r.sp && !r.op ? "Secondary-only data point" : "");
+
+    return `<tr title="${interpTitle}">
+      <td class="${r.src}">${r.p}</td>
+      <td class="${r.src}">${r.op ? "AED "+r.op.toLocaleString() : '<span class="na">—</span>'}</td>
+      <td class="${r.src}">${typeof r.ou === "number" ? r.ou.toLocaleString() : (r.ou||'—')}</td>
+      <td class="${r.src}">${r.sp ? "AED "+r.sp.toLocaleString() : '<span class="na">—</span>'}${dldBadge}</td>
+      <td class="${r.src}">${typeof r.su === "number" ? r.su.toLocaleString() : (r.su||'—')}</td>
+      <td>${gapTxt}</td>
+      <td>${cagrTxt}</td>
+      <td class="${r.src} ${r.sy?.startsWith('+') ? 'positive' : r.sy === 'flat' ? 'neutral' : ''}">${r.sy||'—'}</td>
+    </tr>`;
+  }).join("");
+}
+
+function renderCharts(rows){
+  const labels = rows.map(r => r.p.replace(" (proj)","★").replace(" YTD","").replace("★","★"));
+  const isProj = rows.map(r => r.src === "proj");
+  const op = rows.map(r => r.op || null);
+  const sp = rows.map(r => r.sp || null);
+  const ov = rows.map(r => typeof r.ou === "number" ? r.ou : null);
+  const sv = rows.map(r => typeof r.su === "number" ? r.su : null);
+
+  const opColors = labels.map((_,i) => isProj[i] ? "rgba(26,95,168,0.35)" : "rgba(26,95,168,0.85)");
+  const spColors = labels.map((_,i) => isProj[i] ? "rgba(45,125,58,0.3)" : "rgba(45,125,58,0.75)");
+
+  if(psfChart) psfChart.destroy();
+  if(volChart) volChart.destroy();
+
+  const c1 = document.getElementById("chart_psf").getContext("2d");
+  psfChart = new Chart(c1, {
+    type:"line",
+    data:{
+      labels,
+      datasets:[
+        {label:"Off-plan avg launch PSF",data:op,borderColor:"#1a5fa8",backgroundColor:"rgba(26,95,168,0.07)",borderWidth:2,pointRadius:4,tension:0.3,spanGaps:true,borderDash:[0,0]},
+        {label:"Secondary avg PSF",data:sp,borderColor:"#2d7d3a",backgroundColor:"rgba(45,125,58,0.07)",borderWidth:2,pointRadius:4,tension:0.3,spanGaps:true,borderDash:[6,3]},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: AED ${ctx.parsed.y?.toLocaleString()}`}}},
+      scales:{y:{ticks:{callback:v=>"AED "+v.toLocaleString(),font:{size:10}}},x:{ticks:{maxRotation:45,font:{size:10}}}}
+    }
+  });
+
+  const c2 = document.getElementById("chart_vol").getContext("2d");
+  volChart = new Chart(c2, {
+    type:"bar",
+    data:{
+      labels,
+      datasets:[
+        {label:"Off-plan units",data:ov,backgroundColor:opColors,borderRadius:3},
+        {label:"Secondary units",data:sv,backgroundColor:spColors,borderRadius:3},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{maxRotation:45,font:{size:10}}},y:{ticks:{callback:v=>v>=1000?Math.round(v/1000)+"K":v,font:{size:10}}}}
+    }
+  });
+}
+
+function renderGuidance(){
+  document.getElementById("g_grid").innerHTML = GUIDANCE.map(g=>`
+    <div class="g-card">
+      <div class="g-name">${g.r}</div>
+      <div class="g-sig sig-${g.sig==="early"?"early":g.sig==="peak"?"peak":g.sig==="lat"?"lat":"mid"}">${g.lbl}</div>
+      <div class="g-body">${g.body}</div>
+      <div class="g-tags">${g.tags.map(t=>`<span class="g-tag">${t}</span>`).join("")}</div>
+    </div>`).join("");
+}
+
+function renderPipeline(){
+  document.getElementById("pip_body").innerHTML = PIPELINE.map(p=>`
+    <tr>
+      <td style="font-weight:500">${p.r}</td>
+      <td>${p.p}</td>
+      <td><span class="typ t-${p.t}">${{apt:"Apartment",th:"Townhouse",villa:"Villa"}[p.t]}</span></td>
+      <td>${typeof p.u === "number" ? p.u.toLocaleString() : p.u}</td>
+      <td style="font-weight:500">AED ${p.psf.toLocaleString()}/sqft</td>
+      <td>${p.h}</td>
+      <td style="color:var(--muted);font-size:10px;font-style:italic">${p.n}</td>
+    </tr>`).join("");
+}
+
+function update(){
+  populateProjectDropdown();
+  const {area, rows, kpi, type, projName, regionKey} = getActiveData();
+  const typeLabel = {apt:"Apartments",th:"Townhouses",villa:"Villas"}[type];
+  const lbl = projName ? `${projName}` : `${area.name} · ${typeLabel} (region avg)`;
+  document.getElementById("chart1_label").textContent = lbl;
+  document.getElementById("chart2_label").textContent = lbl;
+  document.getElementById("tbl_label").textContent = lbl;
+  renderKPI({kpi, area, type, regionKey});
+  renderTable(rows, regionKey);
+  renderCharts(rows);
+}
+
+document.getElementById("sel_region").addEventListener("change", update);
+document.getElementById("sel_type").addEventListener("change", update);
+document.getElementById("sel_project").addEventListener("change", () => {
+  const {area, rows, kpi, type, projName, regionKey} = getActiveData();
+  const typeLabel = {apt:"Apartments",th:"Townhouses",villa:"Villas"}[type];
+  const lbl = projName ? `${projName}` : `${area.name} · ${typeLabel} (region avg)`;
+  document.getElementById("chart1_label").textContent = lbl;
+  document.getElementById("chart2_label").textContent = lbl;
+  document.getElementById("tbl_label").textContent = lbl;
+  renderKPI({kpi, area, type, regionKey});
+  renderTable(rows, regionKey);
+  renderCharts(rows);
+});
+renderGuidance();
+renderPipeline();
+update();
+
+// ═══════════════════════════════════════════════════════════════════
+// ROI / IRR CALCULATOR
+// ═══════════════════════════════════════════════════════════════════
+
+// ── ROI Calculator — Region/Project auto-fill ───────────────────────────────
+
+// Context text per region
+const ROI_CONTEXT = {
+  jvc:             "JVC apt CAGR 2022–26: ~16.7% pa · Bayut 2025 YoY: +17% · Cushman W forecast: +5–8% in 2026",
+  downtown:        "Knight Frank 2026: +3% prime · Downtown plateau after 18–28% run · off-plan launches pricing above secondary",
+  business_bay:    "DLD all-txn PSF AED 2,901 (Binghatti off-plan heavy) · ready secondary ~AED 1,960 · Cushman W: +5–8% 2026",
+  marina:          "Marina CAGR 2022–26: ~11% pa · growth slowing to 2–4% · still strong rental yield 5–6%",
+  jlt:             "JLT CAGR 2022–26: ~12% pa · Red Line metro anchor · Cushman W: +5–8% mid-market 2026",
+  dubai_hills:     "DH TH CAGR 2017–26: ~10% pa · Emaar brand premium · villa +14% YoY 2025 · forecast +5–8% 2026",
+  dubai_south:     "Dubai South CAGR 2018–26: ~13.6% pa · Al Maktoum Airport $35B · Metro Blue Line 2029 · forecast +15–20% near-term",
+  town_square:     "Town Square CAGR 2022–26: ~16% pa · DLD 2025 avg = AED 1,401/sqft (+21.6% YoY) · Jan 2026 DLD = AED 1,808 (off-plan skewed) · Nshama phased supply keeps lid on prices",
+  arabian_ranches: "AR3 TH CAGR 2020–26: ~11% pa · villa +23% YoY 2025 · Emaar brand · forecast +5–7% 2026",
+  mudon:           "Arabella TH CAGR 2015–26: ~9% pa · Dubai Properties developer · solid 6–8% appreciation · Al Ranim fresh delivery",
+  mbr:             "Sobha Hartland apt CAGR 2018–26: ~11% pa · geopolitical headwind on premium buyers · forecast +5–8% 2026",
+  palm:            "Palm villa CAGR 2022–26: ~14% pa · at peak · growth near-zero for existing stock · off-plan new branded launches (Rixos) above secondary",
+  dso:             "DSO CAGR 2022–26: ~18% pa · Blue Line announcement drove +29% in 2025 · 2029 metro delivery will re-rate again · best yield in established Dubai",
+  tilal:           "Tilal TH CAGR 2020–26: ~13% pa · MAF developer · Crystal Lagoon lifestyle premium · infrastructure completing 2026–27",
+  damac_hills:     "DAMAC Hills 1 villa CAGR 2022–26: ~13% pa · Akoya golf community · mature infrastructure · yield 5.5–6.5% · +15% YoY 2025",
+  damac_hills2:    "DAMAC Hills 2 TH CAGR 2022–26: ~24% pa · Dubai's most affordable community · +28% YoY 2025 · best mid-market yield 7–9% · strong rental demand",
+  sports_city:     "Sports City apt CAGR 2022–26: ~17% pa · +26% YoY 2025 · Victory Heights villa +39% YoY · affordable entry · improving infrastructure",
+  jvt:             "JVT apt CAGR 2022–26: ~19% pa · +33% YoY 2025 (Binghatti/Sobha Solis launches) · outperforming JVC · Blue Line proximity · Cushman W: +5–8% 2026",
+  damac_lagoons:   "DAMAC Lagoons TH CAGR (2022–26): ~14% pa · +26% YoY 2025 · Crystal Lagoon community · DAMAC developer quality improving · Dubizzle ROI: 10.46%",
+  creek_harbour:   "Creek Harbour apt CAGR 2022–26: ~15% pa · Emaar waterfront · DLD Jan 2026 = AED 2,624 · Tower handovers ongoing · strong rental demand",
+  arjan:           "Arjan apt CAGR 2022–26: ~19% pa · +29–37% YoY 2025 · Blue Line station adjacent · yield 8%+ · Binghatti/Ellington launches driving price",
+  al_furjan:       "Al Furjan TH CAGR 2022–26: ~14% pa · +17% YoY 2025 · Red Line metro connected · Murooj Al Furjan strong · Cushman W: +5–8% 2026",
+};
+
+// Default growth scenarios per region
+const ROI_SCENARIOS = {
+  jvc:             {bear:1, base:5, bull:10},
+  downtown:        {bear:0, base:3, bull:7},
+  business_bay:    {bear:1, base:5, bull:9},
+  marina:          {bear:0, base:3, bull:7},
+  jlt:             {bear:1, base:5, bull:10},
+  dubai_hills:     {bear:2, base:6, bull:12},
+  dubai_south:     {bear:5, base:12, bull:20},
+  town_square:     {bear:2, base:7, bull:14},
+  arabian_ranches: {bear:2, base:6, bull:11},
+  mudon:           {bear:2, base:6, bull:11},
+  mbr:             {bear:1, base:5, bull:10},
+  palm:            {bear:-1, base:2, bull:6},
+  dso:             {bear:3, base:10, bull:18},
+  tilal:           {bear:2, base:7, bull:13},
+  damac_hills:     {bear:1, base:5, bull:10},
+  damac_hills2:    {bear:3, base:10, bull:18},
+  sports_city:     {bear:2, base:7, bull:14},
+  jvt:             {bear:2, base:7, bull:13},
+  damac_lagoons:   {bear:2, base:8, bull:15},
+  creek_harbour:   {bear:1, base:5, bull:10},
+  arjan:           {bear:2, base:8, bull:15},
+  al_furjan:       {bear:2, base:6, bull:11},
+};
+
+function roiRegionChange(){
+  const region = document.getElementById("roi_region").value;
+  const type   = document.getElementById("roi_type").value;
+  // Repopulate project dropdown (region-gated)
+  const projSel = document.getElementById("roi_project");
+  projSel.innerHTML = '<option value="">— Select project (optional) —</option>';
+  if(region && PROJECTS[region]){
+    const filtered = PROJECTS[region].filter(p => p.type === type);
+    filtered.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = p.name;
+      projSel.appendChild(opt);
+    });
+  }
+  // Update context text and scenarios
+  if(region){
+    document.getElementById("roi_context_text").innerHTML = ROI_CONTEXT[region] || "See dashboard charts for region-specific guidance.";
+    const sc = ROI_SCENARIOS[region];
+    if(sc){
+      setSlider("r_bear", sc.bear); setSlider("r_base", sc.base); setSlider("r_bull", sc.bull);
+    }
+  }
+  document.getElementById("roi_autofill_badge").style.display = "none";
+  roiUpdatePsf();
+}
+
+function roiTypeChange(){
+  const region = document.getElementById("roi_region").value;
+  const type   = document.getElementById("roi_type").value;
+  const projSel = document.getElementById("roi_project");
+  projSel.innerHTML = '<option value="">— Select project (optional) —</option>';
+  if(region && PROJECTS[region]){
+    const filtered = PROJECTS[region].filter(p => p.type === type);
+    filtered.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = p.name;
+      projSel.appendChild(opt);
+    });
+  }
+  roiUpdatePsf();
+}
+
+function roiProjectChange(){
+  const region  = document.getElementById("roi_region").value;
+  const projId  = document.getElementById("roi_project").value;
+  if(!region || !projId) return;
+  const proj = (PROJECTS[region]||[]).find(p => p.id === projId);
+  if(!proj) return;
+
+  // Pull the most recent verified secondary PSF from the project rows
+  let secPsf = proj.kpi.secPsf;
+  // Typical sqft per type
+  const defaultSqft = {apt:1100, th:2200, villa:3000}[proj.type] || 1500;
+  const price = secPsf ? Math.round(secPsf * defaultSqft / 50000) * 50000 : null;
+
+  if(price){
+    document.getElementById("r_price").value = price;
+    document.getElementById("r_sqft").value = defaultSqft;
+  }
+
+  // Service charge estimate per type (AED/sqft/yr × sqft)
+  const scRates = {apt:14, th:5, villa:4};
+  const sc = Math.round((scRates[proj.type]||10) * defaultSqft / 1000) * 1000;
+  document.getElementById("r_sc").value = sc;
+
+  // Rental income estimate from yield
+  if(proj.kpi.yield && price){
+    const yieldPct = parseFloat(proj.kpi.yield);
+    if(!isNaN(yieldPct)){
+      const rent = Math.round(price * yieldPct / 100 / 5000) * 5000;
+      document.getElementById("r_rent").value = rent;
+    }
+  }
+
+  // Set growth scenarios for this region
+  const sc2 = ROI_SCENARIOS[region];
+  if(sc2){ setSlider("r_bear", sc2.bear); setSlider("r_base", sc2.base); setSlider("r_bull", sc2.bull); }
+
+  document.getElementById("roi_autofill_badge").style.display = "block";
+  document.getElementById("roi_autofill_badge").textContent =
+    `✓ Auto-filled: ${proj.name} · AED ${price ? price.toLocaleString() : '?'} · ${defaultSqft.toLocaleString()} sqft · Yield est. ${proj.kpi.yield||'—'} · Scenarios set for ${DB[region]?.name||region}`;
+  roiUpdatePsf();
+}
+
+function roiClearProject(){
+  document.getElementById("roi_project").value = "";
+  document.getElementById("roi_autofill_badge").style.display = "none";
+  roiUpdatePsf();
+}
+
+// Live PSF indicator — compares user-entered PSF vs market secondary PSF
+function roiUpdatePsf(){
+  const price  = parseFloat(document.getElementById("r_price").value) || 0;
+  const sqft   = parseFloat(document.getElementById("r_sqft").value)  || 0;
+  const region = document.getElementById("roi_region").value;
+  const type   = document.getElementById("roi_type").value;
+
+  const yourEl    = document.getElementById("psf_your");
+  const marketEl  = document.getElementById("psf_market");
+  const verdictEl = document.getElementById("psf_verdict");
+
+  if(!price || !sqft){ yourEl.textContent = "—"; return; }
+  const yourPsf = Math.round(price / sqft);
+  yourEl.textContent = "AED " + yourPsf.toLocaleString() + "/sqft";
+
+  if(!region){ marketEl.textContent = "select region first"; verdictEl.style.display="none"; return; }
+
+  const area = DB[region];
+  const kpi  = area?.[type]?.kpi;
+  const secPsf = kpi?.secPsf;
+
+  if(!secPsf){ marketEl.textContent = "no secondary data for this type"; verdictEl.style.display="none"; return; }
+
+  marketEl.textContent = "AED " + secPsf.toLocaleString() + "/sqft (" + (area?.name||region) + " · " + {apt:"Apt",th:"TH",villa:"Villa"}[type] + " secondary avg)";
+
+  const diff = ((yourPsf / secPsf) - 1) * 100;
+  verdictEl.style.display = "block";
+
+  if(diff < -5){
+    verdictEl.style.background = "#e8f5e9"; verdictEl.style.color = "#1b5e20";
+    verdictEl.textContent = "✓ " + Math.abs(diff).toFixed(1) + "% BELOW market avg — potential undervalue or older unit";
+  } else if(diff <= 5){
+    verdictEl.style.background = "#fffbe6"; verdictEl.style.color = "#8c4d00";
+    verdictEl.textContent = "≈ At market — " + (diff >= 0 ? "+" : "") + diff.toFixed(1) + "% vs secondary avg";
+  } else if(diff <= 15){
+    verdictEl.style.background = "#fff4e0"; verdictEl.style.color = "#a05c00";
+    verdictEl.textContent = "▲ +" + diff.toFixed(1) + "% above market avg — premium unit or negotiate";
+  } else {
+    verdictEl.style.background = "#fdecea"; verdictEl.style.color = "#a32d2d";
+    verdictEl.textContent = "⚠ +" + diff.toFixed(1) + "% above market — significantly overpriced vs secondary avg";
+  }
+}
+
+function setSlider(id, val){
+  const el = document.getElementById(id);
+  const out = document.getElementById(id+"_out");
+  if(!el) return;
+  el.value = val;
+  if(out) out.textContent = val + "%";
+}
+
+// Utility: format AED
+function fmtAED(v){
+  const abs = Math.abs(v);
+  const sign = v < 0 ? '-' : '';
+  if(abs >= 1e6) return sign + 'AED ' + (abs/1e6).toFixed(2) + 'M';
+  return sign + 'AED ' + Math.round(abs).toLocaleString();
+}
+function fmtPct(v){ return (v >= 0 ? '+' : '') + v.toFixed(1) + '%'; }
+
+// Wire live slider readouts
+function wireSlider(id, suffix){
+  const el = document.getElementById(id);
+  const out = document.getElementById(id + '_out');
+  if(!el || !out) return;
+  el.addEventListener('input', () => { out.textContent = el.value + suffix; });
+}
+wireSlider('r_dp_pct', '%');
+wireSlider('r_rate', '%');
+wireSlider('r_term', ' yrs');
+wireSlider('r_hold', ' yrs');
+wireSlider('r_dld', '%');
+wireSlider('r_agency_buy', '%');
+wireSlider('r_agency_sell', '%');
+wireSlider('r_vac', '%');
+wireSlider('r_bear', '%');
+wireSlider('r_base', '%');
+wireSlider('r_bull', '%');
+
+// Monthly EMI (reducing balance, fixed rate)
+function calcEMI(principal, annualRate, termYears){
+  const r = annualRate / 100 / 12;
+  const n = termYears * 12;
+  if(r === 0) return principal / n;
+  return principal * r * Math.pow(1+r, n) / (Math.pow(1+r, n) - 1);
+}
+
+// Amortisation schedule — returns array of {interest, principal, balance} per month
+function amortSchedule(principal, annualRate, termYears){
+  const r = annualRate / 100 / 12;
+  const n = termYears * 12;
+  const emi = calcEMI(principal, annualRate, termYears);
+  let bal = principal;
+  const sched = [];
+  for(let i = 0; i < n; i++){
+    const interest = bal * r;
+    const princ = Math.min(emi - interest, bal);
+    bal = Math.max(0, bal - princ);
+    sched.push({interest, principal: princ, balance: bal, emi});
+    if(bal <= 0) break;
+  }
+  return sched;
+}
+
+// IRR via Newton-Raphson on monthly cash flows
+function calcIRR(cashflows){
+  // cashflows[0] = negative initial outlay, subsequent = monthly net
+  let r = 0.01; // initial guess 1% monthly
+  for(let iter = 0; iter < 1000; iter++){
+    let npv = 0, dnpv = 0;
+    cashflows.forEach((cf, t) => {
+      const disc = Math.pow(1 + r, t);
+      npv  += cf / disc;
+      dnpv -= t * cf / Math.pow(1 + r, t + 1);
+    });
+    const rNew = r - npv / dnpv;
+    if(Math.abs(rNew - r) < 1e-10) { r = rNew; break; }
+    r = rNew;
+    if(r < -0.9999) r = -0.9999;
+  }
+  return r;
+}
+
+// Main calculator
+let roiChartInst = null;
+
+function calcROI(){
+  const price       = parseFloat(document.getElementById('r_price').value) || 2000000;
+  const sqft        = parseFloat(document.getElementById('r_sqft').value)  || 1500;
+  const dpPct       = parseFloat(document.getElementById('r_dp_pct').value) / 100;
+  const annRate     = parseFloat(document.getElementById('r_rate').value);
+  const termYrs     = parseInt(document.getElementById('r_term').value);
+  const holdYrs     = parseInt(document.getElementById('r_hold').value);
+  const dldPct      = parseFloat(document.getElementById('r_dld').value) / 100;
+  const agencyBuyPct= parseFloat(document.getElementById('r_agency_buy').value) / 100;
+  const agencySellPct=parseFloat(document.getElementById('r_agency_sell').value) / 100;
+  const miscCosts   = parseFloat(document.getElementById('r_misc').value) || 15000;
+  const fitOut      = parseFloat(document.getElementById('r_fit').value)  || 0;
+  const scAnnual    = parseFloat(document.getElementById('r_sc').value)   || 0;
+  const rentAnnual  = parseFloat(document.getElementById('r_rent').value) || 0;
+  const vacPct      = parseFloat(document.getElementById('r_vac').value)  / 100;
+  const growBear    = parseFloat(document.getElementById('r_bear').value) / 100;
+  const growBase    = parseFloat(document.getElementById('r_base').value) / 100;
+  const growBull    = parseFloat(document.getElementById('r_bull').value) / 100;
+
+  // Derived
+  const dp          = price * dpPct;
+  const loanAmt     = price * (1 - dpPct);
+  const dldFee      = price * dldPct;
+  const agencyBuy   = price * agencyBuyPct;
+  const totalUpfront = dp + dldFee + agencyBuy + miscCosts + fitOut;
+  const holdMonths  = holdYrs * 12;
+  const netRentMo   = (rentAnnual * (1 - vacPct) - scAnnual) / 12; // net monthly after vacancy + SC
+
+  const emi         = calcEMI(loanAmt, annRate, termYrs);
+  const sched       = amortSchedule(loanAmt, annRate, termYrs);
+
+  // Balance at end of hold period
+  const balAtSale   = sched[Math.min(holdMonths - 1, sched.length - 1)]?.balance || 0;
+
+  // Total EMI paid during hold
+  const totalEMI    = emi * holdMonths;
+  const totalInterest = sched.slice(0, holdMonths).reduce((s,m) => s + m.interest, 0);
+  const totalPrincipalPaid = totalEMI - totalInterest;
+
+  // Total cash invested = upfront + EMIs (EMI already includes principal recapture, but cash is still spent)
+  const totalCashInvested = totalUpfront + totalEMI;
+
+  // Net monthly cash flow: -emi + netRentMo  (positive if rental covers partial EMI)
+  const monthlyCF = netRentMo - emi;
+
+  // Scenarios
+  const scenarios = [
+    { label:'Bear', key:'bear', rate: growBear, cls:'r-bear', txtcls:'#a32d2d' },
+    { label:'Base', key:'base', rate: growBase, cls:'r-base', txtcls:'#185fa5' },
+    { label:'Bull', key:'bull', rate: growBull, cls:'r-bull', txtcls:'#2d7d3a' },
+  ];
+
+  // Build monthly cashflow arrays for IRR
+  // t=0: -totalUpfront
+  // t=1..holdMonths: monthlyCF (negative if emi > rent)
+  // t=holdMonths: + saleProceeds - balAtSale
+
+  const scResults = scenarios.map(sc => {
+    const exitValue  = price * Math.pow(1 + sc.rate, holdYrs);
+    const agencySell = exitValue * agencySellPct;
+    const netProceeds = exitValue - agencySell - balAtSale;
+    const totalProfit = netProceeds - totalUpfront + netRentMo * holdMonths - scAnnual/12 * holdMonths;
+    // IRR on monthly cash flows
+    const cfs = [-totalUpfront];
+    for(let m = 1; m <= holdMonths; m++){
+      cfs.push(monthlyCF);
+    }
+    cfs[holdMonths] += netProceeds; // add exit at last month
+    const monthlyIRR = calcIRR(cfs);
+    const annualIRR  = Math.pow(1 + monthlyIRR, 12) - 1;
+    const roi        = (netProceeds + netRentMo * holdMonths - totalUpfront) / totalUpfront * 100;
+    const multiple   = (netProceeds) / totalUpfront;
+
+    return { ...sc, exitValue, agencySell, netProceeds, totalProfit, annualIRR: annualIRR * 100, roi, multiple };
+  });
+
+  // Break-even year (base scenario — year when cumulative CF turns positive)
+  const baseRate = growBase;
+  let beYear = null;
+  for(let y = 1; y <= holdYrs; y++){
+    const ev = price * Math.pow(1 + baseRate, y);
+    const bal = sched[Math.min(y*12-1, sched.length-1)]?.balance || 0;
+    const np  = ev - ev * agencySellPct - bal;
+    const spent = totalUpfront + emi * y * 12 - netRentMo * y * 12;
+    if(np >= spent){ beYear = y; break; }
+  }
+
+  // Update summary cards
+  document.getElementById('r_out_invested').textContent = fmtAED(totalCashInvested);
+  document.getElementById('r_out_bal').textContent      = fmtAED(balAtSale);
+  document.getElementById('r_out_emi').textContent      = 'AED ' + Math.round(emi).toLocaleString();
+  document.getElementById('r_out_be').textContent       = beYear ? 'Year ' + beYear : '> ' + holdYrs + ' yrs';
+  document.getElementById('roi_hold_label').textContent  = holdYrs + '-year';
+  document.getElementById('roi_hold_label2').textContent = holdYrs;
+
+  // Scenario table
+  document.getElementById('roi_tbl_body').innerHTML = scResults.map(sc => `
+    <tr class="${sc.cls}">
+      <td><span style="font-weight:600;color:${sc.txtcls}">${sc.label} (${fmtPct(sc.rate * 100)}/yr)</span></td>
+      <td style="text-align:right;font-weight:500">${fmtAED(sc.exitValue)}</td>
+      <td style="text-align:right;font-weight:500">${fmtAED(sc.netProceeds)}</td>
+      <td style="text-align:right;font-weight:600;color:${sc.netProceeds - totalUpfront >= 0 ? '#2d7d3a':'#a32d2d'}">${fmtAED(sc.netProceeds - totalUpfront + netRentMo * holdMonths)}</td>
+      <td style="text-align:right;font-weight:600;color:${sc.roi >= 0 ? '#2d7d3a':'#a32d2d'}">${sc.roi.toFixed(1)}%</td>
+      <td style="text-align:right;font-weight:600;font-size:14px;color:${sc.annualIRR >= 0 ? '#2d7d3a':'#a32d2d'}">${sc.annualIRR.toFixed(1)}%</td>
+      <td style="text-align:right;font-weight:500">${sc.multiple.toFixed(2)}x</td>
+    </tr>`).join('');
+
+  // Cash flow breakdown
+  document.getElementById('r_cf_body').innerHTML = [
+    ['Down payment',    fmtAED(-dp)],
+    ['DLD fee',         fmtAED(-dldFee)],
+    ['Agency (buy)',    fmtAED(-agencyBuy)],
+    ['Mortgage reg + misc', fmtAED(-miscCosts)],
+    ['Furnishing/fit-out',  fmtAED(-fitOut)],
+    ['Total EMI paid (' + holdYrs + 'yrs)',  fmtAED(-totalEMI)],
+    ['  of which interest', fmtAED(-totalInterest)],
+    ['  of which principal', fmtAED(-totalPrincipalPaid)],
+    ['Rental income (net)',  fmtAED(+netRentMo * holdMonths)],
+  ].map(([l,v]) => `<tr class="cf-row"><td>${l}</td><td>${v}</td></tr>`).join('');
+
+  // Key metrics
+  const baseSc = scResults[1];
+  document.getElementById('r_km_body').innerHTML = [
+    ['Purchase price',    fmtAED(price)],
+    ['Loan amount',       fmtAED(loanAmt)],
+    ['Monthly EMI',       'AED ' + Math.round(emi).toLocaleString()],
+    ['Monthly rent (net)', rentAnnual > 0 ? 'AED ' + Math.round(netRentMo).toLocaleString() : 'Owner-occupied'],
+    ['EMI covered by rent', rentAnnual > 0 ? Math.round(netRentMo/emi*100) + '%' : 'N/A'],
+    ['Price/sqft entry',  'AED ' + Math.round(price/sqft).toLocaleString()],
+    ['Price/sqft exit (base)', 'AED ' + Math.round(baseSc.exitValue/sqft).toLocaleString()],
+    ['Remaining loan at exit', fmtAED(balAtSale)],
+    ['Gross rental yield', rentAnnual > 0 ? (rentAnnual/price*100).toFixed(1)+'%' : 'N/A'],
+  ].map(([l,v]) => `<tr class="km-row"><td>${l}</td><td>${v}</td></tr>`).join('');
+
+  // Year-by-year chart (base scenario)
+  const years = Array.from({length: holdYrs}, (_,i) => 'Yr ' + (i+1));
+  const propVals = years.map((_,i) => Math.round(price * Math.pow(1 + growBase, i+1)));
+  const cumInvested = years.map((_,i) => Math.round(totalUpfront + emi * (i+1) * 12 - netRentMo * (i+1) * 12));
+
+  if(roiChartInst) roiChartInst.destroy();
+  const ctx = document.getElementById('roi_chart').getContext('2d');
+  roiChartInst = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: years,
+      datasets:[
+        {label:'Property value (base)',data:propVals,borderColor:'#2d7d3a',backgroundColor:'rgba(45,125,58,0.07)',borderWidth:2,pointRadius:4,tension:0.3},
+        {label:'Net cash deployed',data:cumInvested,borderColor:'#a32d2d',backgroundColor:'rgba(160,45,45,0.07)',borderWidth:2,pointRadius:4,tension:0.3,borderDash:[5,3]},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx => ctx.dataset.label+': AED '+(ctx.parsed.y||0).toLocaleString()}}},
+      scales:{y:{ticks:{callback:v => 'AED '+(v>=1e6?(v/1e6).toFixed(1)+'M':v.toLocaleString()),font:{size:10}}},x:{ticks:{font:{size:10}}}}
+    }
+  });
+
+  document.getElementById('roi_results').style.display = 'block';
+  document.getElementById('roi_results').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+</script>
+</body>
+</html>
